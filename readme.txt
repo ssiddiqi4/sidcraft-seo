@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -133,6 +133,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 1.4.2 =
+* Fix: "Run audit now" no longer times out on sites with many pages. The audit now runs a few pages at a time from the Overview screen with a progress bar, retries a request that fails, and can be resumed. Fixes and re-checks use the same method instead of one long request.
+
 = 1.4.1 =
 * Maintenance: resolved the remaining Plugin Check warnings (query annotations and a prefixed hook name for the loopback link check).
 
@@ -164,6 +167,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.4.2 =
+Audit no longer times out on large sites.
 
 = 1.4.1 =
 Maintenance release.

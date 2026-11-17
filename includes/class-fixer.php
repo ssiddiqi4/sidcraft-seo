@@ -164,25 +164,19 @@ class Sidcraft_AutoSEO_Fixer {
 
 	/** Everything that is safe to do without asking: not slugs, because those change web addresses. */
 	public static function run_all_safe() {
-		$before = Sidcraft_AutoSEO_Audit::summary();
 		self::links();
 		self::excerpts();
 		Sidcraft_AutoSEO_Images::fix_library( 300 );
 		self::orphans();
 		self::recheck();
-		$after = Sidcraft_AutoSEO_Audit::summary( true );
-		/* translators: 1: average score before, 2: average score after. */
-		return sprintf( __( 'Done. Average score %1$d → %2$d.', 'sidcraft-autoseo' ), (int) $before['avg'], (int) $after['avg'] );
+		return __( 'Done. Re-checking every page now; the scores update as it goes.', 'sidcraft-autoseo' );
 	}
 
-	/** Re-audit everything now (used after fixes). */
+	/** Mark everything for a new audit. The Overview screen then re-checks page by page without long requests. */
 	public static function recheck() {
-		global $wpdb;
-		$wpdb->delete( $wpdb->postmeta, array( 'meta_key' => '_sidcraft_autoseo_checked' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- reset audit marks so everything is checked again.
-		$left = 1; $guard = 0; $start = time();
-		while ( $left > 0 && $guard++ < 50 && ( time() - $start ) < 40 ) { $left = Sidcraft_AutoSEO_Audit::batch( 40, 15 ); }
-		if ( $left > 0 ) { wp_schedule_single_event( time() + 30, 'sidcraft_autoseo_audit_more' ); }
-		Sidcraft_AutoSEO_Audit::summary( true );
+		Sidcraft_AutoSEO_Audit::reset_marks();
+		set_transient( 'sidcraft_autoseo_resume', 1, 10 * MINUTE_IN_SECONDS );
+		wp_schedule_single_event( time() + 60, 'sidcraft_autoseo_audit_more' );
 	}
 
 	/** Apply every automatic fix that applies to a single post. */

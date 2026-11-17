@@ -24,6 +24,25 @@ class Sidcraft_AutoSEO_Admin {
 		wp_register_style( 'sidcraft-autoseo-admin', false, array(), SIDCRAFT_AUTOSEO_VERSION );
 		wp_enqueue_style( 'sidcraft-autoseo-admin' );
 		wp_add_inline_style( 'sidcraft-autoseo-admin', $css );
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only screen check.
+		if ( 'sidcraft-autoseo' === $page && current_user_can( 'manage_options' ) ) {
+			$resume = (bool) get_transient( 'sidcraft_autoseo_resume' ) && Sidcraft_AutoSEO_Audit::pending() > 0;
+			wp_register_script( 'sidcraft-autoseo-admin', false, array(), SIDCRAFT_AUTOSEO_VERSION, true );
+			wp_enqueue_script( 'sidcraft-autoseo-admin' );
+			wp_add_inline_script( 'sidcraft-autoseo-admin', 'window.sidcraftAutoSEO=' . wp_json_encode( array(
+				'ajax' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'sidcraft_autoseo_audit' ), 'resume' => $resume,
+				'checking' => __( 'Checking pages…', 'sidcraft-autoseo' ), 'done' => __( 'Audit finished.', 'sidcraft-autoseo' ),
+				'retry' => __( 'The server did not answer in time. Press “Run audit now” to carry on where it stopped.', 'sidcraft-autoseo' ),
+			) ) . ';' . self::audit_js() );
+		}
+	}
+
+	private static function audit_js() {
+		return '(function(){var c=window.sidcraftAutoSEO,b=document.getElementById("sidcraft-autoseo-run");if(!c||!b)return;var box=document.getElementById("sidcraft-autoseo-progress"),bar=document.getElementById("sidcraft-autoseo-bar"),txt=document.getElementById("sidcraft-autoseo-txt"),running=false,carry=false;'
+		. 'function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}'
+		. 'async function step(reset){for(var t=0;t<3;t++){try{var f=new FormData();f.append("action","sidcraft_autoseo_audit");f.append("_ajax_nonce",c.nonce);if(reset)f.append("reset","1");var r=await fetch(c.ajax,{method:"POST",body:f,credentials:"same-origin"});var j=JSON.parse(await r.text());if(j.success)return j.data}catch(e){}await sleep(1500)}throw new Error(c.retry)}'
+		. 'async function run(reset){if(running)return;running=true;b.disabled=true;box.hidden=false;txt.textContent=c.checking;try{var d=await step(reset);for(;;){var n=Math.max(1,d.total);bar.max=n;bar.value=Math.max(0,n-d.left);txt.textContent=c.checking+" "+bar.value+" / "+n;if(d.done)break;d=await step(false)}txt.textContent=c.done;setTimeout(function(){location.reload()},700)}catch(e){txt.textContent=e.message;carry=true;b.disabled=false;running=false}}'
+		. 'b.addEventListener("click",function(){run(!carry)});if(c.resume)run(false);})();';
 	}
 
 	public static function badge( $score ) {
@@ -139,9 +158,9 @@ class Sidcraft_AutoSEO_Admin {
 		echo '<tr><td>' . esc_html__( 'Search engine notification (IndexNow)', 'sidcraft-autoseo' ) . '</td><td>' . esc_html( $status ) . '</td></tr>';
 		echo '<tr><td>' . esc_html__( 'Last full audit', 'sidcraft-autoseo' ) . '</td><td>' . esc_html( ( $last ? human_time_diff( $last ) . ' ' . __( 'ago', 'sidcraft-autoseo' ) : __( 'Not yet', 'sidcraft-autoseo' ) ) . ' · ' . __( 'waiting to check:', 'sidcraft-autoseo' ) . ' ' . (int) Sidcraft_AutoSEO_Audit::pending() ) . '</td></tr>';
 		echo '</tbody></table><p style="margin-top:14px">';
-		self::button( 'audit', __( 'Run audit now', 'sidcraft-autoseo' ) );
+		echo '<button type="button" class="button" id="sidcraft-autoseo-run" style="margin:0 8px 8px 0">' . esc_html__( 'Run audit now', 'sidcraft-autoseo' ) . '</button>';
 		self::button( 'alt', __( 'Fix missing image alt text now', 'sidcraft-autoseo' ) );
-		echo '</p>';
+		echo '</p><p id="sidcraft-autoseo-progress" hidden style="max-width:520px"><progress id="sidcraft-autoseo-bar" value="0" max="1" style="width:100%;height:18px"></progress><br><span id="sidcraft-autoseo-txt" class="description"></span></p>';
 	}
 
 	private static function tab_pages() {
@@ -383,25 +402,17 @@ class Sidcraft_AutoSEO_Admin {
 		$tab = 'overview';
 		switch ( $do ) {
 			case 'audit':
-				global $wpdb;
-				$wpdb->delete( $wpdb->postmeta, array( 'meta_key' => '_sidcraft_autoseo_checked' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- // re-check everything, not only what is older than a day.
-				$left = 1; $guard = 0;
-				$start = time();
-				while ( $left > 0 && $guard++ < 50 && ( time() - $start ) < 40 ) { $left = Sidcraft_AutoSEO_Audit::batch( 40, 15 ); }
-				Sidcraft_AutoSEO_Audit::summary( true );
-				update_option( 'sidcraft_autoseo_last_run', time(), false );
-				$msg = $left > 0 ? sprintf( 'Audit started. %d pages left; they will be finished in the background.', $left ) : 'Audit finished.';
-				if ( $left > 0 ) { wp_schedule_single_event( time() + 30, 'sidcraft_autoseo_audit_more' ); }
+				Sidcraft_AutoSEO_Audit::reset_marks();
+				set_transient( 'sidcraft_autoseo_resume', 1, 10 * MINUTE_IN_SECONDS );
+				wp_schedule_single_event( time() + 60, 'sidcraft_autoseo_audit_more' );
+				$msg = __( 'Audit started. It runs a few pages at a time while this page is open.', 'sidcraft-autoseo' );
 				break;
 			case 'fix':
 				$what = isset( $_POST['what'] ) ? sanitize_key( wp_unslash( $_POST['what'] ) ) : '';
 				if ( ! isset( Sidcraft_AutoSEO_Fixer::catalog()[ $what ] ) ) { $msg = __( 'Unknown fix.', 'sidcraft-autoseo' ); break; }
-				$before = Sidcraft_AutoSEO_Audit::summary();
 				list( , $msg ) = Sidcraft_AutoSEO_Fixer::run( $what );
 				Sidcraft_AutoSEO_Fixer::recheck();
-				$after = Sidcraft_AutoSEO_Audit::summary( true );
-				/* translators: 1: result sentence, 2: average score before, 3: average score after. */
-				$msg = sprintf( __( '%1$s Average score %2$d → %3$d.', 'sidcraft-autoseo' ), $msg, (int) $before['avg'], (int) $after['avg'] );
+				$msg .= ' ' . __( 'Re-checking every page now.', 'sidcraft-autoseo' );
 				break;
 			case 'fix_all':
 				$msg = Sidcraft_AutoSEO_Fixer::run_all_safe();

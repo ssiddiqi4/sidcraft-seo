@@ -15,6 +15,7 @@ class Sidcraft_AutoSEO_Audit {
 	public static function init() {
 		add_action( self::CRON, array( __CLASS__, 'daily' ) );
 		add_action( 'sidcraft_autoseo_audit_more', array( __CLASS__, 'batch_event' ) );
+		add_action( 'wp_ajax_sidcraft_autoseo_audit', array( __CLASS__, 'ajax_step' ) );
 		add_action( 'save_post', array( __CLASS__, 'on_save' ), 30, 2 );
 		add_action( 'init', array( __CLASS__, 'schedule' ) );
 		add_action( 'save_post', function () { delete_transient( 'sidcraft_autoseo_slugs' ); } );
@@ -169,6 +170,36 @@ class Sidcraft_AutoSEO_Audit {
 			if ( ( microtime( true ) - $start ) > $budget ) { break; }
 		}
 		return self::pending();
+	}
+
+	/** Forget every audit mark so all pages are checked again. */
+	public static function reset_marks() {
+		global $wpdb;
+		$wpdb->delete( $wpdb->postmeta, array( 'meta_key' => '_sidcraft_autoseo_checked' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- re-check everything, not only what is older than a day.
+	}
+
+	/** Published pages and posts that are audited. */
+	public static function total() {
+		$n = 0;
+		foreach ( Sidcraft_AutoSEO_Util::post_types() as $pt ) { $c = wp_count_posts( $pt ); $n += isset( $c->publish ) ? (int) $c->publish : 0; }
+		return $n;
+	}
+
+	/**
+	 * One small step of a full audit, called again and again from the admin screen so no single request runs long
+	 * (long requests hit the web server's time limit on slower hosting).
+	 */
+	public static function ajax_step() {
+		check_ajax_referer( 'sidcraft_autoseo_audit' );
+		if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'forbidden', 403 ); }
+		if ( ! empty( $_POST['reset'] ) ) { self::reset_marks(); delete_transient( 'sidcraft_autoseo_resume' ); }
+		$left = self::batch( 4, 6 );
+		if ( $left <= 0 ) {
+			self::summary( true );
+			update_option( 'sidcraft_autoseo_last_run', time(), false );
+			delete_transient( 'sidcraft_autoseo_resume' );
+		}
+		wp_send_json_success( array( 'left' => $left, 'total' => self::total(), 'done' => $left <= 0 ) );
 	}
 
 	public static function pending() {
