@@ -17,7 +17,8 @@ class Sidcraft_AutoSEO_Speed {
 			'min_js'         => 0,
 			'min_exclude'    => '',
 			'db_keep_rev'    => 5,
-			'db_auto'        => 'off',
+			'db_days'        => 0,
+			'cache_days'     => 0,
 			'profile'        => 0,
 			'slow_ms'        => 2000,
 			'no_emoji'       => 0,
@@ -30,14 +31,15 @@ class Sidcraft_AutoSEO_Speed {
 
 	public static function all() {
 		$o = get_option( self::OPTION, array() );
+		if ( is_array( $o ) && isset( $o['db_auto'] ) && ! isset( $o['db_days'] ) ) { $o['db_days'] = 'weekly' === $o['db_auto'] ? 7 : ( 'monthly' === $o['db_auto'] ? 30 : 0 ); }
 		return wp_parse_args( is_array( $o ) ? $o : array(), self::defaults() );
 	}
 
 	/** Which settings each screen's form owns, so saving one screen never resets another. */
 	public static function groups() {
 		return array(
-			'cache' => array( 'cache', 'cache_hours', 'cache_exclude', 'cache_preload', 'min_html', 'min_css', 'min_js', 'min_exclude', 'no_emoji', 'no_embeds', 'no_dashicons', 'heartbeat', 'revisions_max' ),
-			'db'    => array( 'db_keep_rev', 'db_auto' ),
+			'cache' => array( 'cache', 'cache_hours', 'cache_days', 'cache_exclude', 'cache_preload', 'min_html', 'min_css', 'min_js', 'min_exclude', 'no_emoji', 'no_embeds', 'no_dashicons', 'heartbeat', 'revisions_max' ),
+			'db'    => array( 'db_keep_rev', 'db_days' ),
 			'debug' => array( 'profile', 'slow_ms' ),
 		);
 	}
@@ -52,7 +54,8 @@ class Sidcraft_AutoSEO_Speed {
 				case 'db_keep_rev':   $o[ $k ] = max( 0, min( 100, (int) $v ) ); break;
 				case 'slow_ms':       $o[ $k ] = max( 200, min( 60000, (int) $v ) ); break;
 				case 'revisions_max': $o[ $k ] = max( 0, min( 100, (int) $v ) ); break;
-				case 'db_auto':       $o[ $k ] = in_array( $v, array( 'off', 'weekly', 'monthly' ), true ) ? $v : 'off'; break;
+				case 'db_days':
+				case 'cache_days':    $o[ $k ] = max( 0, min( 180, (int) $v ) ); break;
 				case 'heartbeat':     $o[ $k ] = in_array( $v, array( 'default', 'slow', 'off' ), true ) ? $v : 'default'; break;
 				case 'cache_exclude':
 				case 'min_exclude':   $o[ $k ] = implode( "\n", array_slice( self::lines( is_string( $v ) ? sanitize_textarea_field( $v ) : '' ), 0, 100 ) ); break;
@@ -60,7 +63,45 @@ class Sidcraft_AutoSEO_Speed {
 			}
 		}
 		update_option( self::OPTION, $o, true );
-		Sidcraft_AutoSEO_Cache::clear_all(); Sidcraft_AutoSEO_Minify::clear(); Sidcraft_AutoSEO_DbClean::reschedule();
+		Sidcraft_AutoSEO_Cache::clear_all(); Sidcraft_AutoSEO_Minify::clear(); self::reschedule();
+	}
+
+	/** Timestamp of 12:01 AM in the site's time zone, $days days after the day of $from (0 = the next 12:01 AM). */
+	public static function at_0001( $days = 0, $from = null ) {
+		$tz = wp_timezone(); $now = new DateTimeImmutable( '@' . ( null === $from ? time() : (int) $from ) ); $now = $now->setTimezone( $tz );
+		$d = $now->setTime( 0, 1, 0 );
+		if ( $days > 0 ) { return $d->modify( '+' . (int) $days . ' days' )->getTimestamp(); }
+		return ( $d->getTimestamp() > time() ? $d : $d->modify( '+1 day' ) )->getTimestamp();
+	}
+
+	/** (Re)plan the two maintenance jobs from the saved day counts. */
+	public static function reschedule() {
+		$o = self::all();
+		foreach ( array( Sidcraft_AutoSEO_DbClean::HOOK => (int) $o['db_days'], Sidcraft_AutoSEO_Cache::CLEAR_HOOK => (int) $o['cache_days'] ) as $hook => $days ) {
+			wp_clear_scheduled_hook( $hook );
+			if ( $days > 0 ) { wp_schedule_single_event( self::at_0001( 0 ), $hook ); }
+		}
+	}
+
+	/** After a job ran, plan the next one N days on at 12:01 AM. */
+	public static function plan_next( $hook, $days ) {
+		wp_clear_scheduled_hook( $hook );
+		if ( $days > 0 ) { wp_schedule_single_event( self::at_0001( $days ), $hook ); }
+	}
+
+	/** Safety net: if a job is enabled but nothing is planned (for example after a restore), plan it. */
+	public static function heal() {
+		$o = self::all();
+		foreach ( array( Sidcraft_AutoSEO_DbClean::HOOK => (int) $o['db_days'], Sidcraft_AutoSEO_Cache::CLEAR_HOOK => (int) $o['cache_days'] ) as $hook => $days ) {
+			if ( $days > 0 && ! wp_next_scheduled( $hook ) ) { wp_schedule_single_event( self::at_0001( 0 ), $hook ); }
+		}
+	}
+
+	/** Options for a "every N days" drop-down. */
+	public static function day_options() {
+		$o = array( 0 => __( 'Never', 'sidcraft-autoseo' ), 1 => __( 'Every day at 12:01 AM', 'sidcraft-autoseo' ) );
+		for ( $i = 2; $i <= 180; $i++ ) { /* translators: %d: number of days */ $o[ $i ] = sprintf( __( 'Every %d days at 12:01 AM', 'sidcraft-autoseo' ), $i ); }
+		return $o;
 	}
 
 	/** Non-empty trimmed lines of a text box. */
@@ -72,6 +113,7 @@ class Sidcraft_AutoSEO_Speed {
 
 	public static function init() {
 		$o = self::all();
+		add_action( 'init', array( __CLASS__, 'heal' ), 30 );
 		if ( $o['no_emoji'] ) {
 			remove_action( 'wp_head', 'print_emoji_detection_script', 7 ); remove_action( 'wp_print_styles', 'print_emoji_styles' );
 			remove_action( 'admin_print_scripts', 'print_emoji_detection_script' ); remove_action( 'admin_print_styles', 'print_emoji_styles' );

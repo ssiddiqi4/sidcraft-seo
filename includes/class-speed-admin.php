@@ -20,6 +20,17 @@ class Sidcraft_AutoSEO_Speed_Admin {
 		echo '<input type="hidden" name="action" value="sidcraft_autoseo_speed"><input type="hidden" name="do" value="' . esc_attr( $do ) . '"><button class="' . esc_attr( $class ) . '">' . esc_html( $label ) . '</button></form>';
 	}
 
+	private static function days_select( $name, $val ) {
+		$h = '<select name="' . esc_attr( $name ) . '">';
+		foreach ( Sidcraft_AutoSEO_Speed::day_options() as $k => $l ) { $h .= '<option value="' . (int) $k . '"' . selected( (int) $val, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
+		return $h . '</select>';
+	}
+
+	private static function next_run( $hook ) {
+		$t = wp_next_scheduled( $hook );
+		return $t ? '<br><span class="description">' . esc_html( sprintf( /* translators: %s: date and time */ __( 'Next run: %s', 'sidcraft-autoseo' ), wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $t ) ) ) . '</span>' : '';
+	}
+
 	private static function check( $name, $label, $on, $help = '' ) {
 		echo '<p><label><input type="checkbox" name="' . esc_attr( $name ) . '" value="1" ' . checked( (bool) $on, true, false ) . '> <strong>' . esc_html( $label ) . '</strong></label>' . ( '' !== $help ? '<br><span class="description" style="margin-left:24px;display:inline-block">' . esc_html( $help ) . '</span>' : '' ) . '</p>';
 	}
@@ -48,6 +59,7 @@ class Sidcraft_AutoSEO_Speed_Admin {
 		echo '<h2>' . esc_html__( 'Page cache', 'sidcraft-autoseo' ) . '</h2>';
 		self::check( 'cache', __( 'Cache pages and posts', 'sidcraft-autoseo' ), $o['cache'], __( 'Visitors who are not logged in get a saved copy of the page instead of waiting for WordPress to build it. The cache clears itself whenever you publish, edit, comment, or change a menu, widget, theme or plugin.', 'sidcraft-autoseo' ) );
 		echo '<p><label>' . esc_html__( 'Keep a page for', 'sidcraft-autoseo' ) . ' <input type="number" min="1" max="720" name="cache_hours" value="' . esc_attr( $o['cache_hours'] ) . '" style="width:70px"> ' . esc_html__( 'hours', 'sidcraft-autoseo' ) . '</label></p>';
+		echo '<p><label><strong>' . esc_html__( 'Clear the cache on a schedule', 'sidcraft-autoseo' ) . '</strong> ' . self::days_select( 'cache_days', $o['cache_days'] ) . '</label><br><span class="description">' . esc_html__( 'Empties the page cache automatically. 1 = every day at 12:01 AM (your site’s time zone). The cache also clears whenever you change content.', 'sidcraft-autoseo' ) . '</span>' . self::next_run( Sidcraft_AutoSEO_Cache::CLEAR_HOOK ) . '</p>';
 		self::check( 'cache_preload', __( 'Preload after clearing', 'sidcraft-autoseo' ), $o['cache_preload'], __( 'Visits your newest pages in the background so the first real visitor already gets a fast page.', 'sidcraft-autoseo' ) );
 		echo '<p><label for="sbs-cx"><strong>' . esc_html__( 'Never cache addresses containing', 'sidcraft-autoseo' ) . '</strong></label><br><textarea id="sbs-cx" name="cache_exclude" rows="3" cols="50" placeholder="/cart&#10;/checkout&#10;/my-account">' . esc_textarea( $o['cache_exclude'] ) . '</textarea><br><span class="description">' . esc_html__( 'One per line. Shopping carts, checkouts, account pages and anyone logged in or with a comment cookie are already skipped. Pages with a query string (?…) are never cached.', 'sidcraft-autoseo' ) . '</span></p>';
 		echo '<h2>' . esc_html__( 'Minify', 'sidcraft-autoseo' ) . '</h2>';
@@ -80,9 +92,7 @@ class Sidcraft_AutoSEO_Speed_Admin {
 		echo '</tbody></table><p><button class="button button-primary" onclick="return confirm(' . esc_attr( wp_json_encode( __( 'Delete the ticked items permanently?', 'sidcraft-autoseo' ) ) ) . ')">' . esc_html__( 'Clean selected', 'sidcraft-autoseo' ) . '</button></p></form>';
 		self::form_open( 'save_db' );
 		echo '<h2>' . esc_html__( 'Settings', 'sidcraft-autoseo' ) . '</h2><p><label>' . esc_html__( 'When cleaning revisions, keep the newest', 'sidcraft-autoseo' ) . ' <input type="number" min="0" max="100" name="db_keep_rev" value="' . esc_attr( $o['db_keep_rev'] ) . '" style="width:70px"> ' . esc_html__( 'per post', 'sidcraft-autoseo' ) . '</label></p>';
-		echo '<p><label>' . esc_html__( 'Clean automatically', 'sidcraft-autoseo' ) . ' <select name="db_auto">';
-		foreach ( array( 'off' => __( 'Never', 'sidcraft-autoseo' ), 'weekly' => __( 'Weekly', 'sidcraft-autoseo' ), 'monthly' => __( 'Monthly', 'sidcraft-autoseo' ) ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $o['db_auto'], $k, false ) . '>' . esc_html( $l ) . '</option>'; }
-		echo '</select></label> <span class="description">' . esc_html__( 'Cleans everything above except embed caches and compacts the tables.', 'sidcraft-autoseo' ) . '</span></p><p><button class="button">' . esc_html__( 'Save settings', 'sidcraft-autoseo' ) . '</button></p></form>';
+		echo '<p><label><strong>' . esc_html__( 'Maintenance schedule', 'sidcraft-autoseo' ) . '</strong> ' . self::days_select( 'db_days', $o['db_days'] ) . '</label><br><span class="description">' . esc_html__( 'Cleans everything above except embed caches, then compacts the tables. 1 = every day at 12:01 AM (your site’s time zone).', 'sidcraft-autoseo' ) . '</span>' . self::next_run( Sidcraft_AutoSEO_DbClean::HOOK ) . '</p><p><button class="button">' . esc_html__( 'Save settings', 'sidcraft-autoseo' ) . '</button></p></form>';
 		echo '<h2>' . esc_html__( 'Tables', 'sidcraft-autoseo' ) . '</h2>';
 		if ( Sidcraft_AutoSEO_DbClean::is_mysql() ) {
 			$t = Sidcraft_AutoSEO_DbClean::tables(); $tot = 0; $free = 0;

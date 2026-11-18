@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Sidcraft AutoSEO
  * Description:       Hands-off SEO for WordPress pages and posts: automatic titles and descriptions, social cards, structured data, sitemap, redirects, image alt text, instant search-engine notification and a daily self-audit. Works out of the box with no setup.
- * Version:           1.6.2
+ * Version:           1.7.0
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Suhaib Siddiqi
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SIDCRAFT_AUTOSEO_VERSION', '1.6.2' );
+define( 'SIDCRAFT_AUTOSEO_VERSION', '1.7.0' );
 define( 'SIDCRAFT_AUTOSEO_FILE', __FILE__ );
 define( 'SIDCRAFT_AUTOSEO_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -51,7 +51,7 @@ Sidcraft_AutoSEO_Cache::maybe_serve();
 register_activation_hook( __FILE__, array( 'Sidcraft_AutoSEO_Redirects', 'install' ) );
 register_activation_hook( __FILE__, array( 'Sidcraft_AutoSEO_Audit', 'schedule' ) );
 register_deactivation_hook( __FILE__, array( 'Sidcraft_AutoSEO_Audit', 'unschedule' ) );
-register_deactivation_hook( __FILE__, function () { wp_clear_scheduled_hook( Sidcraft_AutoSEO_DbClean::HOOK ); wp_clear_scheduled_hook( Sidcraft_AutoSEO_Cache::HOOK, array( 0 ) ); Sidcraft_AutoSEO_Cache::clear_all(); } );
+register_deactivation_hook( __FILE__, function () { wp_clear_scheduled_hook( Sidcraft_AutoSEO_DbClean::HOOK ); wp_clear_scheduled_hook( Sidcraft_AutoSEO_Cache::CLEAR_HOOK ); wp_clear_scheduled_hook( Sidcraft_AutoSEO_Cache::HOOK, array( 0 ) ); Sidcraft_AutoSEO_Cache::clear_all(); } );
 
 add_action(
 	'plugins_loaded',

@@ -35,6 +35,7 @@ function sidcraft_autoseo_uninstall() {
 		foreach ( array( 'sidcraft_autoseo_speed', 'sidcraft_autoseo_slow', 'sidcraft_autoseo_min_bad' ) as $option_name ) { delete_option( $option_name ); }
 	}
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_db_auto' );
+	wp_clear_scheduled_hook( 'sidcraft_autoseo_cache_clear' );
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_preload', array( 0 ) );
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_daily_audit' );
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_audit_more' );

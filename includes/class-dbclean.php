@@ -10,13 +10,6 @@ class Sidcraft_AutoSEO_DbClean {
 
 	public static function init() {
 		add_action( self::HOOK, array( __CLASS__, 'auto' ) );
-		add_filter( 'cron_schedules', function ( $s ) { $s['sidcraft_monthly'] = array( 'interval' => 30 * DAY_IN_SECONDS, 'display' => 'Monthly' ); return $s; } ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- a monthly clean-up the site owner chose.
-	}
-
-	public static function reschedule() {
-		wp_clear_scheduled_hook( self::HOOK );
-		$m = Sidcraft_AutoSEO_Speed::all()['db_auto'];
-		if ( 'weekly' === $m || 'monthly' === $m ) { wp_schedule_event( time() + DAY_IN_SECONDS, 'weekly' === $m ? 'weekly' : 'sidcraft_monthly', self::HOOK ); }
 	}
 
 	/** What can be cleaned: key => label, help. */
@@ -122,7 +115,7 @@ class Sidcraft_AutoSEO_DbClean {
 		return $out;
 	}
 
-	public static function auto() { self::run( array( 'revisions', 'autodrafts', 'trash', 'spam', 'trashcomm', 'transients', 'orph_post', 'orph_comm', 'orph_rel', 'log404' ) ); self::optimize(); }
+	public static function auto() { Sidcraft_AutoSEO_Speed::plan_next( self::HOOK, (int) Sidcraft_AutoSEO_Speed::all()['db_days'] ); self::run( array( 'revisions', 'autodrafts', 'trash', 'spam', 'trashcomm', 'transients', 'orph_post', 'orph_comm', 'orph_rel', 'log404' ) ); self::optimize(); }
 
 	/** Tables with size and reclaimable space. */
 	public static function tables() {

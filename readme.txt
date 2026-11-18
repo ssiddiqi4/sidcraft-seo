@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.2
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,12 +130,21 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Screenshots ==
 
-1. The Overview screen: average score, how many pages are good, redirects created automatically, and the issues most worth looking at.
+1. The Overview screen: average score, how many pages are good, and the issues most worth looking at.
 2. Pages & Posts, with the lowest scores first and plain-language reasons.
-3. Redirects & 404s: automatic and manual redirects, and broken addresses that visitors reached.
-4. Settings: every automatic feature has an on/off switch.
+3. Broken URLs: the addresses visitors and bots asked for that do not exist, with one-click redirect, block and 410 Gone.
+4. Redirects & 404s: automatic and manual redirects.
+5. Speed & Database, Cache & minify: page cache, cache schedule, and HTML, CSS and JavaScript minify.
+6. Speed & Database, Database: clean old revisions, spam, transients and orphaned data, with a maintenance schedule.
+7. Speed & Database, Performance & debug: server health checks and a speed test.
+8. Settings: every automatic feature has an on/off switch.
 
 == Changelog ==
+
+= 1.7.0 =
+* Database maintenance schedule: choose every 1 to 180 days from a drop-down. 1 = every day at 12:01 AM in your site's time zone.
+* Clear-cache schedule with the same drop-down.
+* New screenshots and banner.
 
 = 1.6.2 =
 * Plugin Check: uninstall removes its folders through WP_Filesystem.
@@ -223,6 +232,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.7.0 =
+Adds timed database maintenance and timed cache clearing (every 1 to 180 days at 12:01 AM).
 
 = 1.6.2 =
 Code tidy-up only.

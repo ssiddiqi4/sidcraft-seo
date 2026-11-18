@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 class Sidcraft_AutoSEO_Cache {
 
 	const HOOK = 'sidcraft_autoseo_preload';
+	const CLEAR_HOOK = 'sidcraft_autoseo_cache_clear';
 	/** Query arguments that do not change the page, so the plain cached copy is used. */
 	private static $ignore = array( 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'msclkid' );
 
@@ -70,6 +71,7 @@ class Sidcraft_AutoSEO_Cache {
 			}
 		}
 		add_action( self::HOOK, array( __CLASS__, 'preload_step' ) );
+		add_action( self::CLEAR_HOOK, array( __CLASS__, 'scheduled_clear' ) );
 		add_action( 'admin_bar_menu', array( __CLASS__, 'bar' ), 90 );
 	}
 
@@ -122,6 +124,12 @@ class Sidcraft_AutoSEO_Cache {
 		$d = self::dir(); $n = '' === $d ? 0 : Sidcraft_AutoSEO_Speed::rm_dir( $d );
 		if ( Sidcraft_AutoSEO_Speed::all()['cache'] && Sidcraft_AutoSEO_Speed::all()['cache_preload'] && ! wp_next_scheduled( self::HOOK, array( 0 ) ) ) { wp_schedule_single_event( time() + 20, self::HOOK, array( 0 ) ); }
 		return $n;
+	}
+
+	/** The timed clear: empty the cache, then plan the next one. */
+	public static function scheduled_clear() {
+		Sidcraft_AutoSEO_Speed::plan_next( self::CLEAR_HOOK, (int) Sidcraft_AutoSEO_Speed::all()['cache_days'] );
+		self::clear_all();
 	}
 
 	/* ---------------------------------------------------------- preload */
