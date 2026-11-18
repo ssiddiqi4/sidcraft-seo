@@ -70,8 +70,10 @@ class Sidcraft_AutoSEO_Admin {
 	}
 
 	private static function tabs() {
-		return array( 'overview' => __( 'Overview', 'sidcraft-autoseo' ), 'pages' => __( 'Pages & Posts', 'sidcraft-autoseo' ), 'links' => __( 'Broken Links', 'sidcraft-autoseo' ), 'urls' => __( 'Broken URLs', 'sidcraft-autoseo' ), 'redirects' => __( 'Redirects & 404s', 'sidcraft-autoseo' ), 'settings' => __( 'Settings', 'sidcraft-autoseo' ) );
+		return array( 'overview' => __( 'Overview', 'sidcraft-autoseo' ), 'pages' => __( 'Pages & Posts', 'sidcraft-autoseo' ), 'links' => __( 'Broken Links', 'sidcraft-autoseo' ), 'urls' => __( 'Broken URLs', 'sidcraft-autoseo' ), 'redirects' => __( 'Redirects & 404s', 'sidcraft-autoseo' ), 'speed' => __( 'Speed & Database', 'sidcraft-autoseo' ), 'settings' => __( 'Settings', 'sidcraft-autoseo' ) );
 	}
+
+	private static function tab_speed() { Sidcraft_AutoSEO_Speed_Admin::render(); }
 
 	public static function page() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }

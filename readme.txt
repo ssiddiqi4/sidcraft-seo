@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.4
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,10 @@ Hands-off SEO for pages and posts: automatic titles, descriptions, social cards,
 * **Image alt text.** Written for every image that has none: new uploads, the existing media library and images inside page content. Camera-roll names such as "IMG_1234" fall back to the page title. Images you marked as decorative are left alone.
 * **Excerpts.** A short excerpt for posts that have none. Excerpts you wrote are never changed.
 * **Internal links.** Posts that link to no other page get a short "You may also like" list of related posts.
+
+= Speed & Database (optional) =
+
+A page cache, HTML/CSS/JavaScript minify, database clean-up (revisions, spam, expired transients, orphaned data) and performance debugging (health checks, speed test, slow-page log, error-log reader). Every option is off until you switch it on. The cache is stored as files in the uploads folder and needs no change to wp-config.php or the server; use only one caching plugin at a time.
 
 = Self-repairing =
 
@@ -133,6 +137,14 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 1.6.0 =
+* New "Speed & Database" tab, all switched off until you turn it on:
+* Page cache for pages and posts (visitors who are not logged in), cleared automatically when you change anything, with preload.
+* Minify HTML, CSS and JavaScript. Smaller copies are saved in the uploads folder; originals are never changed.
+* Database clean-up: old revisions, auto-drafts, trash, spam, expired transients, embed caches, orphaned data, old 404 log rows; optional weekly or monthly automatic clean; table sizes and Optimize; biggest autoloaded options.
+* Performance and debugging: server health checks with advice, speed test, slow-page log with admin-bar timing, error-log reader grouped by plugin or theme.
+* Optional extras: remove emoji and embed scripts, Dashicons for visitors, slow down Heartbeat, limit revisions.
+
 = 1.5.4 =
 * Plugin Check: the sitemap query note now sits on the line it applies to.
 
@@ -205,6 +217,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.6.0 =
+Adds page caching, minify, database clean-up and performance debugging. Everything new is off until you enable it.
 
 = 1.5.4 =
 Minor Plugin Check tidy-up.

@@ -21,6 +21,18 @@ function sidcraft_autoseo_uninstall() {
 			delete_option( $option_name );
 		}
 	}
+	if ( is_array( $settings ) && ! empty( $settings['remove_data'] ) ) {
+		$up = wp_get_upload_dir();
+		if ( empty( $up['error'] ) ) {
+			foreach ( array( 'pages', 'min' ) as $sub ) {
+				$dir = trailingslashit( $up['basedir'] ) . 'sidcraft-autoseo/' . $sub;
+				if ( is_dir( $dir ) ) { foreach ( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ), RecursiveIteratorIterator::CHILD_FIRST ) as $f ) { $f->isDir() ? rmdir( $f->getPathname() ) : wp_delete_file( $f->getPathname() ); } rmdir( $dir ); } // phpcs:ignore WordPress.WP.AlternativeFunctions.rmdir_rmdir -- removing our own generated folders.
+			}
+		}
+		foreach ( array( 'sidcraft_autoseo_speed', 'sidcraft_autoseo_slow', 'sidcraft_autoseo_min_bad' ) as $option_name ) { delete_option( $option_name ); }
+	}
+	wp_clear_scheduled_hook( 'sidcraft_autoseo_db_auto' );
+	wp_clear_scheduled_hook( 'sidcraft_autoseo_preload', array( 0 ) );
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_daily_audit' );
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_audit_more' );
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_links_more' );
