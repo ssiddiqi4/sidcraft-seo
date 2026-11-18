@@ -22,8 +22,8 @@ class Sidcraft_AutoSEO_Sitemap {
 	}
 
 	public static function query( $args, $type ) {
-		$args['meta_query']   = isset( $args['meta_query'] ) ? $args['meta_query'] : array();
 		// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- hides noindex pages from the sitemap.
+		$args['meta_query']   = isset( $args['meta_query'] ) ? $args['meta_query'] : array();
 		$args['meta_query'][] = array( 'key' => '_sidcraft_autoseo_noindex', 'compare' => 'NOT EXISTS' );
 		// phpcs:enable WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 		return $args;
