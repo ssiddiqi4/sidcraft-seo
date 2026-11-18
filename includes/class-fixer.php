@@ -162,6 +162,99 @@ class Sidcraft_AutoSEO_Fixer {
 		return array( 0, '' );
 	}
 
+	/* ---------- fixing in small steps (so no single request runs long) ---------- */
+
+	const JOB = 'sidcraft_autoseo_fixjob';
+
+	/** Plan a fix. It then runs a few seconds at a time from the admin screen (job_step). */
+	public static function job_start( $what ) {
+		$plans = array( 'all' => array( 'links', 'excerpts', 'images', 'orphans' ), 'orphan' => array( 'orphans' ), 'slug' => array( 'slugs' ), 'excerpt' => array( 'excerpts' ), 'links' => array( 'links' ) );
+		if ( ! isset( $plans[ $what ] ) ) { return false; }
+		update_option( self::JOB, array( 'stages' => $plans[ $what ], 'i' => 0, 'cursor' => 0, 'ids' => null, 'n' => 0, 'what' => $what, 'started' => time() ), false );
+		return true;
+	}
+
+	public static function job() { $j = get_option( self::JOB ); return is_array( $j ) ? $j : null; }
+
+	/** Work for about five seconds. Returns array( done, stage, n ). */
+	public static function job_step() {
+		$j = self::job();
+		if ( ! $j ) { return array( 'done' => true, 'stage' => '', 'n' => 0 ); }
+		$end = microtime( true ) + 5; $count = count( $j['stages'] );
+		while ( $j['i'] < $count && microtime( true ) < $end ) {
+			if ( self::stage( $j['stages'][ $j['i'] ], $j, $end ) ) { $j['i']++; $j['cursor'] = 0; $j['ids'] = null; }
+		}
+		if ( $j['i'] >= $count ) {
+			delete_option( self::JOB );
+			self::recheck();
+			return array( 'done' => true, 'stage' => '', 'n' => (int) $j['n'] );
+		}
+		update_option( self::JOB, $j, false );
+		return array( 'done' => false, 'stage' => $j['stages'][ $j['i'] ], 'n' => (int) $j['n'] );
+	}
+
+	/** One slice of one stage. True when the stage has no more to do. */
+	private static function stage( $name, array &$j, $end ) {
+		global $wpdb;
+		switch ( $name ) {
+			case 'links':
+				self::links();
+				return true;
+			case 'excerpts':
+				$scope = Sidcraft_AutoSEO_Audit::scope_ids();
+				$types = Sidcraft_AutoSEO_Util::post_types(); $in = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+				$only  = null === $scope ? '' : ( $scope ? ' AND ID IN (' . implode( ',', array_map( 'intval', $scope ) ) . ')' : ' AND 1 = 0' );
+				$ids   = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE ID > %d AND post_status = 'publish' AND post_excerpt = '' AND post_type IN ($in){$only} ORDER BY ID ASC LIMIT 8", array_merge( array( (int) $j['cursor'] ), $types ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- integers only.
+				if ( ! $ids ) { return true; }
+				foreach ( $ids as $id ) {
+					$post = get_post( (int) $id ); $j['cursor'] = (int) $id;
+					if ( $post ) {
+						$text = Sidcraft_AutoSEO_Util::lead_text( $post );
+						if ( Sidcraft_AutoSEO_Util::len( $text ) >= 60 ) { wp_update_post( wp_slash( array( 'ID' => $post->ID, 'post_excerpt' => Sidcraft_AutoSEO_Util::truncate( $text, 200 ) ) ) ); $j['n']++; }
+					}
+					if ( microtime( true ) > $end ) { break; }
+				}
+				return false;
+			case 'images':
+				$j['n'] += Sidcraft_AutoSEO_Images::fix_library( 20 );
+				$j['cursor']++;
+				return $j['cursor'] >= 10;
+			case 'orphans':
+			case 'slugs':
+				if ( ! is_array( $j['ids'] ) ) { $j['ids'] = self::posts_with_issue( 'orphans' === $name ? 'orphan' : 'slug', 500 ); }
+				for ( $k = 0; $k < 5 && $j['cursor'] < count( $j['ids'] ); $k++, $j['cursor']++ ) {
+					$post = get_post( (int) $j['ids'][ $j['cursor'] ] );
+					if ( ! $post ) { continue; }
+					if ( 'orphans' === $name ) { $j['n'] += self::fix_orphan( $post ); } else { $j['n'] += self::fix_slug( $post ); }
+					if ( microtime( true ) > $end ) { $j['cursor']++; break; }
+				}
+				return $j['cursor'] >= count( $j['ids'] );
+		}
+		return true;
+	}
+
+	private static function fix_orphan( $post ) {
+		$host = self::pick_host( $post );
+		if ( ! $host ) { return 0; }
+		$extra = self::extra_ids( $host->ID ); $n = 0;
+		if ( ! in_array( (int) $post->ID, $extra, true ) ) { $extra[] = (int) $post->ID; update_post_meta( $host->ID, self::EXTRA, ',' . implode( ',', $extra ) . ',' ); $n = 1; }
+		Sidcraft_AutoSEO_Audit::store( $post ); Sidcraft_AutoSEO_Audit::store( $host );
+		return $n;
+	}
+
+	private static function fix_slug( $post ) {
+		$new = self::short_slug( $post->post_name );
+		if ( '' === $new || $new === $post->post_name ) { return 0; }
+		wp_update_post( array( 'ID' => $post->ID, 'post_name' => wp_unique_post_slug( $new, $post->ID, $post->post_status, $post->post_type, $post->post_parent ) ) );
+		return 1;
+	}
+
+	public static function ajax() {
+		check_ajax_referer( 'sidcraft_autoseo_audit' );
+		if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'forbidden', 403 ); }
+		wp_send_json_success( self::job_step() );
+	}
+
 	/** Everything that is safe to do without asking: not slugs, because those change web addresses. */
 	public static function run_all_safe() {
 		self::links();

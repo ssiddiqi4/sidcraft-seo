@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 1.8.2 =
+* "Fix everything that can be fixed automatically" and the single fix buttons (links, excerpts, orphan pages, web addresses) now run a few pages at a time with a progress message on the Overview screen, instead of one long request that timed out on large sites.
+
 = 1.8.1 =
 * After an update, background scans queued by the old version are cleared, so they cannot pile up on a large site.
 
@@ -245,6 +248,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.8.2 =
+Fixes the timeout when pressing the one-click fix buttons on large sites.
 
 = 1.8.1 =
 Clears queued background scans after an update.

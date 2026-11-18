@@ -16,6 +16,7 @@ class Sidcraft_AutoSEO_Audit {
 		add_action( self::CRON, array( __CLASS__, 'daily' ) );
 		add_action( 'sidcraft_autoseo_audit_more', array( __CLASS__, 'batch_event' ) );
 		add_action( 'wp_ajax_sidcraft_autoseo_audit', array( __CLASS__, 'ajax_step' ) );
+		add_action( 'wp_ajax_sidcraft_autoseo_fix', array( 'Sidcraft_AutoSEO_Fixer', 'ajax' ) );
 		add_action( 'save_post', array( __CLASS__, 'on_save' ), 30, 2 );
 		add_action( 'init', array( __CLASS__, 'schedule' ) );
 		add_action( 'init', array( __CLASS__, 'after_update' ), 5 );

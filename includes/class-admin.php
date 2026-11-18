@@ -30,7 +30,7 @@ class Sidcraft_AutoSEO_Admin {
 			wp_register_script( 'sidcraft-autoseo-admin', false, array(), SIDCRAFT_AUTOSEO_VERSION, true );
 			wp_enqueue_script( 'sidcraft-autoseo-admin' );
 			wp_add_inline_script( 'sidcraft-autoseo-admin', 'window.sidcraftAutoSEO=' . wp_json_encode( array(
-				'ajax' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'sidcraft_autoseo_audit' ), 'resume' => $resume,
+				'ajax' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'sidcraft_autoseo_audit' ), 'resume' => $resume, 'fixjob' => (bool) Sidcraft_AutoSEO_Fixer::job(), 'fixing' => __( 'Fixing… please keep this page open.', 'sidcraft-autoseo' ), 'fixdone' => __( 'Fixes finished. Re-checking pages…', 'sidcraft-autoseo' ),
 				'checking' => __( 'Checking pages…', 'sidcraft-autoseo' ), 'done' => __( 'Audit finished.', 'sidcraft-autoseo' ),
 				'retry' => __( 'The server did not answer in time. Press “Run audit now” to carry on where it stopped.', 'sidcraft-autoseo' ),
 			) ) . ';' . self::audit_js() );
@@ -42,7 +42,10 @@ class Sidcraft_AutoSEO_Admin {
 		. 'function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}'
 		. 'async function step(reset){for(var t=0;t<3;t++){try{var f=new FormData();f.append("action","sidcraft_autoseo_audit");f.append("_ajax_nonce",c.nonce);if(reset)f.append("reset","1");var r=await fetch(c.ajax,{method:"POST",body:f,credentials:"same-origin"});var j=JSON.parse(await r.text());if(j.success)return j.data}catch(e){}await sleep(1500)}throw new Error(c.retry)}'
 		. 'async function run(reset){if(running)return;running=true;b.disabled=true;box.hidden=false;txt.textContent=c.checking;try{var d=await step(reset);for(;;){var n=Math.max(1,d.total);bar.max=n;bar.value=Math.max(0,n-d.left);txt.textContent=c.checking+" "+bar.value+" / "+n;if(d.done)break;await sleep(800);d=await step(false)}txt.textContent=c.done;setTimeout(function(){location.reload()},700)}catch(e){txt.textContent=e.message;carry=true;b.disabled=false;running=false}}'
-		. 'b.addEventListener("click",function(){run(!carry)});if(c.resume)run(false);})();';
+		. 'b.addEventListener("click",function(){run(!carry)});if(c.resume)run(false);})();'
+		. '(function(){var c=window.sidcraftAutoSEO;if(!c||!c.fixjob)return;var w=document.querySelector(".wrap"),n=document.createElement("div");n.className="notice notice-info";n.style.padding="12px";n.textContent=c.fixing;if(w&&w.children[1])w.insertBefore(n,w.children[1]);else if(w)w.appendChild(n);'
+		. 'function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}'
+		. 'async function go(){var fails=0;for(;;){try{var f=new FormData();f.append("action","sidcraft_autoseo_fix");f.append("_ajax_nonce",c.nonce);var r=await fetch(c.ajax,{method:"POST",body:f,credentials:"same-origin"});var j=JSON.parse(await r.text());if(!j.success)throw 0;fails=0;n.textContent=c.fixing+" ("+j.data.n+")";if(j.data.done){n.textContent=c.fixdone;setTimeout(function(){location.reload()},900);return}}catch(e){if(++fails>5){n.textContent=c.fixing+" – the server is slow; reload this page to carry on.";return}await sleep(2500)}await sleep(500)}}go();})();';
 	}
 
 	public static function badge( $score ) {
@@ -509,12 +512,12 @@ class Sidcraft_AutoSEO_Admin {
 			case 'fix':
 				$what = isset( $_POST['what'] ) ? sanitize_key( wp_unslash( $_POST['what'] ) ) : '';
 				if ( ! isset( Sidcraft_AutoSEO_Fixer::catalog()[ $what ] ) ) { $msg = __( 'Unknown fix.', 'sidcraft-autoseo' ); break; }
-				list( , $msg ) = Sidcraft_AutoSEO_Fixer::run( $what );
-				Sidcraft_AutoSEO_Fixer::recheck();
-				$msg .= ' ' . __( 'Re-checking every page now.', 'sidcraft-autoseo' );
+				Sidcraft_AutoSEO_Fixer::job_start( $what );
+				$msg = __( 'The fix is running a few pages at a time. Keep this page open until it says it is finished.', 'sidcraft-autoseo' );
 				break;
 			case 'fix_all':
-				$msg = Sidcraft_AutoSEO_Fixer::run_all_safe();
+				Sidcraft_AutoSEO_Fixer::job_start( 'all' );
+				$msg = __( 'The fixes are running a few pages at a time. Keep this page open until it says they are finished.', 'sidcraft-autoseo' );
 				break;
 			case 'fix_post':
 				$tab  = 'pages';
