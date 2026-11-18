@@ -27,6 +27,7 @@ class Sidcraft_AutoSEO_Settings {
 			'noindex_thin_tags'  => 1,
 			'redirect_author'    => 1,     // single-author sites: author archive -> home.
 			'daily_audit'        => 1,
+			'audit_limit'        => 500,   // how many of the newest posts are audited and scanned (all pages are included). 0 = every post.
 			'remove_data'        => 0,
 			'twitter_site'       => '',
 		);
@@ -34,6 +35,7 @@ class Sidcraft_AutoSEO_Settings {
 
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'maybe_seed' ) );
+		add_action( 'update_option_' . self::OPTION, function () { delete_transient( 'sidcraft_autoseo_scope' ); delete_transient( 'sidcraft_autoseo_summary' ); } );
 	}
 
 	public static function maybe_seed() {
@@ -64,6 +66,8 @@ class Sidcraft_AutoSEO_Settings {
 				$out[ $k ] = ( isset( $in[ $k ] ) && 'open' === $in[ $k ] ) ? 'open' : 'collapsed';
 			} elseif ( in_array( $k, array( 'title_sep', 'twitter_site' ), true ) ) {
 				$out[ $k ] = isset( $in[ $k ] ) ? sanitize_text_field( $in[ $k ] ) : $def;
+			} elseif ( 'audit_limit' === $k ) {
+				$out[ $k ] = isset( $in[ $k ] ) ? max( 0, min( 1000000, (int) $in[ $k ] ) ) : (int) $def;
 			} elseif ( 'default_image' === $k ) {
 				$out[ $k ] = isset( $in[ $k ] ) ? esc_url_raw( $in[ $k ] ) : '';
 			} else {

@@ -174,8 +174,10 @@ class Sidcraft_AutoSEO_Links {
 		$types    = Sidcraft_AutoSEO_Util::post_types();
 		$in       = implode( ',', array_fill( 0, count( $types ), '%s' ) );
 		$more     = true;
+		$scope    = Sidcraft_AutoSEO_Audit::scope_ids();
 		while ( time() < $deadline ) {
-			$ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE ID > %d AND post_status = 'publish' AND post_type IN ($in) ORDER BY ID ASC LIMIT 10", array_merge( array( (int) $st['cursor'] ), $types ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %s per post type, built above.
+			$only = null === $scope ? '' : ( $scope ? ' AND ID IN (' . implode( ',', array_map( 'intval', $scope ) ) . ')' : ' AND 1 = 0' );
+			$ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE ID > %d AND post_status = 'publish' AND post_type IN ($in){$only} ORDER BY ID ASC LIMIT 10", array_merge( array( (int) $st['cursor'] ), $types ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %s per post type, built above.
 			if ( ! $ids ) { $st['done'] = true; $st['finished'] = time(); $more = false; break; }
 			foreach ( $ids as $id ) {
 				$post = get_post( (int) $id );
@@ -195,7 +197,8 @@ class Sidcraft_AutoSEO_Links {
 	}
 
 	public static function event() {
-		if ( self::batch( 20 ) ) { wp_schedule_single_event( time() + 20, self::EVENT ); }
+		if ( Sidcraft_AutoSEO_Audit::busy() ) { wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, self::EVENT ); return; }
+		if ( self::batch( 8 ) ) { wp_schedule_single_event( time() + 2 * MINUTE_IN_SECONDS, self::EVENT ); }
 	}
 
 	public static function daily() {

@@ -157,14 +157,55 @@ class Sidcraft_AutoSEO_Audit {
 		self::store( $post );
 	}
 
+	/** IDs the audit covers: every page plus the newest posts, up to the "Posts to check" limit. null = every post. */
+	public static function scope_ids() {
+		$limit = (int) Sidcraft_AutoSEO_Settings::get( 'audit_limit' );
+		if ( $limit <= 0 ) { return null; }
+		$ids = get_transient( 'sidcraft_autoseo_scope' );
+		if ( is_array( $ids ) && ( $ids['limit'] ?? 0 ) === $limit ) { return $ids['ids']; }
+		$out = array();
+		foreach ( Sidcraft_AutoSEO_Util::post_types() as $pt ) {
+			$n = is_post_type_hierarchical( $pt ) ? 2000 : $limit;
+			$out = array_merge( $out, get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'posts_per_page' => $n, 'fields' => 'ids', 'orderby' => 'date', 'order' => 'DESC', 'no_found_rows' => true, 'suppress_filters' => true ) ) );
+		}
+		$out = array_values( array_unique( array_map( 'intval', $out ) ) );
+		set_transient( 'sidcraft_autoseo_scope', array( 'limit' => $limit, 'ids' => $out ), 15 * MINUTE_IN_SECONDS );
+		return $out;
+	}
+
+	/** True while the server is already busy: background work waits. */
+	public static function busy() {
+		if ( ! function_exists( 'sys_getloadavg' ) ) { return false; }
+		$l = sys_getloadavg();
+		return is_array( $l ) && isset( $l[0] ) && (float) $l[0] > 4.0;
+	}
+
+	/** Posts in scope that were not checked in the last day (newest first). */
+	private static function waiting( $limit = 0 ) {
+		global $wpdb;
+		$scope = self::scope_ids();
+		if ( null === $scope ) {
+			$q = new WP_Query( array(
+				'post_type' => Sidcraft_AutoSEO_Util::post_types(), 'post_status' => 'publish', 'posts_per_page' => $limit > 0 ? $limit : 1, 'fields' => 'ids', 'orderby' => 'ID', 'order' => 'ASC',
+				'meta_query' => // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- needed to find unaudited posts.
+				 array( 'relation' => 'OR', array( 'key' => '_sidcraft_autoseo_checked', 'compare' => 'NOT EXISTS' ), array( 'key' => '_sidcraft_autoseo_checked', 'value' => time() - DAY_IN_SECONDS, 'compare' => '<', 'type' => 'NUMERIC' ) ),
+			) );
+			return array( array_map( 'intval', $q->posts ), (int) $q->found_posts );
+		}
+		if ( ! $scope ) { return array( array(), 0 ); }
+		$fresh = array();
+		foreach ( array_chunk( $scope, 1000 ) as $chunk ) {
+			$in = implode( ',', array_map( 'intval', $chunk ) );
+			$fresh = array_merge( $fresh, $wpdb->get_col( $wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value > %d AND post_id IN ($in)", '_sidcraft_autoseo_checked', time() - DAY_IN_SECONDS ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- integers only.
+		}
+		$todo = array_values( array_diff( $scope, array_map( 'intval', $fresh ) ) );
+		return array( $limit > 0 ? array_slice( $todo, 0, $limit ) : array(), count( $todo ) );
+	}
+
 	/** Audit up to $limit posts that have not been checked yet or changed since. Returns how many are still waiting. */
 	public static function batch( $limit = 40, $budget = 20 ) {
 		$start = microtime( true );
-		$ids = get_posts( array(
-			'post_type' => Sidcraft_AutoSEO_Util::post_types(), 'post_status' => 'publish', 'posts_per_page' => (int) $limit, 'fields' => 'ids', 'no_found_rows' => true,
-			'meta_query' => // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- needed to find unaudited posts.
-			 array( 'relation' => 'OR', array( 'key' => '_sidcraft_autoseo_checked', 'compare' => 'NOT EXISTS' ), array( 'key' => '_sidcraft_autoseo_checked', 'value' => time() - DAY_IN_SECONDS, 'compare' => '<', 'type' => 'NUMERIC' ) ),
-		) );
+		list( $ids, ) = self::waiting( (int) $limit );
 		foreach ( $ids as $id ) {
 			self::store( $id );
 			if ( ( microtime( true ) - $start ) > $budget ) { break; }
@@ -180,6 +221,8 @@ class Sidcraft_AutoSEO_Audit {
 
 	/** Published pages and posts that are audited. */
 	public static function total() {
+		$scope = self::scope_ids();
+		if ( null !== $scope ) { return count( $scope ); }
 		$n = 0;
 		foreach ( Sidcraft_AutoSEO_Util::post_types() as $pt ) { $c = wp_count_posts( $pt ); $n += isset( $c->publish ) ? (int) $c->publish : 0; }
 		return $n;
@@ -203,29 +246,33 @@ class Sidcraft_AutoSEO_Audit {
 	}
 
 	public static function pending() {
-		$q = new WP_Query( array(
-			'post_type' => Sidcraft_AutoSEO_Util::post_types(), 'post_status' => 'publish', 'posts_per_page' => 1, 'fields' => 'ids',
-			'meta_query' => // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- needed to find unaudited posts.
-			 array( 'relation' => 'OR', array( 'key' => '_sidcraft_autoseo_checked', 'compare' => 'NOT EXISTS' ), array( 'key' => '_sidcraft_autoseo_checked', 'value' => time() - DAY_IN_SECONDS, 'compare' => '<', 'type' => 'NUMERIC' ) ),
-		) );
-		return (int) $q->found_posts;
+		list( , $n ) = self::waiting( 0 );
+		return (int) $n;
 	}
 
 	public static function daily() {
 		if ( ! Sidcraft_AutoSEO_Settings::on( 'daily_audit' ) ) { return; }
-		if ( Sidcraft_AutoSEO_Settings::on( 'auto_alt' ) ) { Sidcraft_AutoSEO_Images::fix_library( 200 ); }
+		if ( self::busy() ) { wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, self::CRON ); return; }
+		if ( Sidcraft_AutoSEO_Settings::on( 'auto_alt' ) ) { Sidcraft_AutoSEO_Images::fix_library( 100 ); }
 		Sidcraft_AutoSEO_Redirects::prune();
 		delete_transient( 'sidcraft_autoseo_slugs' );
-		$left = self::batch( 40 );
-		self::summary( true );
-		if ( $left > 0 ) { wp_schedule_single_event( time() + 60, 'sidcraft_autoseo_audit_more' ); }
+		self::more( self::batch( 10, 10 ) );
 		update_option( 'sidcraft_autoseo_last_run', time(), false );
 	}
 
 	public static function batch_event() {
-		$left = self::batch( 40 );
+		if ( self::busy() ) { wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, 'sidcraft_autoseo_audit_more' ); return; }
+		self::more( self::batch( 10, 10 ) );
+	}
+
+	/** After a batch: plan the next one a few minutes on, and refresh the dashboard numbers only now and then. */
+	private static function more( $left ) {
+		if ( $left > 0 ) {
+			if ( ! wp_next_scheduled( 'sidcraft_autoseo_audit_more' ) ) { wp_schedule_single_event( time() + 3 * MINUTE_IN_SECONDS, 'sidcraft_autoseo_audit_more' ); }
+			if ( ! get_transient( 'sidcraft_autoseo_summary_lock' ) ) { set_transient( 'sidcraft_autoseo_summary_lock', 1, 15 * MINUTE_IN_SECONDS ); self::summary( true ); }
+			return;
+		}
 		self::summary( true );
-		if ( $left > 0 ) { wp_schedule_single_event( time() + 60, 'sidcraft_autoseo_audit_more' ); }
 	}
 
 	/** Site-wide numbers for the dashboard. */
@@ -235,11 +282,12 @@ class Sidcraft_AutoSEO_Audit {
 		global $wpdb;
 		$types = Sidcraft_AutoSEO_Util::post_types();
 		$in    = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+		$scope = self::scope_ids(); $only = null === $scope ? '' : ( $scope ? ' AND p.ID IN (' . implode( ',', array_map( 'intval', $scope ) ) . ')' : ' AND 1 = 0' );
 		$rows  = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- one %s per post type; summary is cached in a transient.
 			"SELECT p.ID, CAST(s.meta_value AS UNSIGNED) AS score, i.meta_value AS issues FROM {$wpdb->posts} p
 			 JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = '_sidcraft_autoseo_score'
 			 LEFT JOIN {$wpdb->postmeta} i ON i.post_id = p.ID AND i.meta_key = '_sidcraft_autoseo_issues'
-			 WHERE p.post_status = 'publish' AND p.post_type IN ($in)", $types ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.DirectDatabaseQuery -- one %s per post type, built above.
+			 WHERE p.post_status = 'publish' AND p.post_type IN ($in){$only}", $types ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.DirectDatabaseQuery -- one %s per post type, built above.
 		$total = count( $rows ); $sum = 0; $good = 0; $ok = 0; $bad = 0; $by = array();
 		foreach ( $rows as $r ) {
 			$sc = (int) $r['score']; $sum += $sc;

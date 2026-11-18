@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.2
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,10 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 1.8.0 =
+* Large sites: new setting "Posts to check" (Settings tab, default 500). The audit and the broken-link scan check all pages and your newest posts up to that number instead of every post, so a site with tens of thousands of posts no longer keeps the server busy. 0 = every post. New and edited posts are still checked when saved.
+* Gentler background work: smaller batches, a few minutes between them, a pause while the server load is high, no full rebuild of the dashboard numbers after every batch, and a short pause between steps when you run the audit by hand.
+
 = 1.7.2 =
 * The database maintenance schedule is now in its own box at the top of the Database screen.
 
@@ -238,6 +242,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.8.0 =
+Fixes slow servers on sites with thousands of posts: the audit now checks your newest posts (500 by default) and is much lighter.
 
 = 1.7.2 =
 Makes the database schedule easier to find.
