@@ -299,16 +299,40 @@ class Sidcraft_AutoSEO_Admin {
 		echo '</tbody></table>';
 	}
 
-	/** The addresses that asked for a missing URL, each with a button to block it in Sidcraft Bot Shield. */
+	/** Names that real search-engine crawlers resolve to (reverse DNS), by company. */
+	private static function engine_hosts() {
+		return array( 'Google' => array( '.googlebot.com', '.google.com' ), 'Bing' => array( '.search.msn.com' ), 'Apple' => array( '.applebot.apple.com' ), 'Yahoo' => array( '.crawl.yahoo.net' ), 'Yandex' => array( '.yandex.ru', '.yandex.net', '.yandex.com' ), 'Baidu' => array( '.baidu.com', '.baidu.jp' ), 'DuckDuckGo' => array( '.duckduckgo.com' ) );
+	}
+
+	/** Does this address really belong to a search engine? Returns array( company or '', host name or '' ). Checks the name both ways, so it cannot be faked. */
+	private static function search_engine( $ip ) {
+		$host = apply_filters( 'sidcraft_autoseo_rdns', null, $ip );
+		if ( null === $host ) { $host = @gethostbyaddr( $ip ); } // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a failed lookup is a normal outcome.
+		if ( ! is_string( $host ) || '' === $host || $host === $ip ) { return array( '', '' ); }
+		$host = strtolower( rtrim( $host, '.' ) );
+		foreach ( self::engine_hosts() as $name => $suffixes ) {
+			foreach ( $suffixes as $suf ) {
+				if ( strlen( $host ) > strlen( $suf ) && substr( $host, -strlen( $suf ) ) === $suf ) {
+					$back = apply_filters( 'sidcraft_autoseo_forward', null, $host );
+					if ( null === $back ) { $back = false !== strpos( $ip, ':' ) ? array() : (array) @gethostbynamel( $host ); } // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+					$want = @inet_pton( $ip ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+					foreach ( (array) $back as $b ) { if ( $want && @inet_pton( $b ) === $want ) { return array( $name, $host ); } } // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				}
+			}
+		}
+		return array( '', $host );
+	}
+
+	/** The addresses that asked for a missing URL, each with Check, and Block or Unblock for Sidcraft Bot Shield. */
 	private static function ip_cell( $r ) {
 		$ips = isset( $r->ips ) && '' !== $r->ips ? explode( ',', $r->ips ) : array();
 		if ( ! $ips ) { return '<span class="description">' . esc_html__( 'not recorded', 'sidcraft-autoseo' ) . '</span>'; }
 		$shield = class_exists( 'Sidcraft_BotShield_Settings' ); $out = '';
 		foreach ( $ips as $ip ) {
-			$out .= '<div style="white-space:nowrap"><code>' . esc_html( $ip ) . '</code>';
+			$out .= '<div style="white-space:nowrap"><code>' . esc_html( $ip ) . '</code> ' . self::button_html( 'url_check_ip', __( 'Check', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link' );
 			if ( $shield ) {
 				$blocked = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
-				$out .= $blocked ? ' <em>' . esc_html__( 'blocked', 'sidcraft-autoseo' ) . '</em>' : ' ' . self::button_html( 'url_block_ip', __( 'Block', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link', __( 'Block this address for good in Sidcraft Bot Shield?', 'sidcraft-autoseo' ) );
+				$out .= $blocked ? ' <em>' . esc_html__( 'blocked', 'sidcraft-autoseo' ) . '</em> ' . self::button_html( 'url_unblock_ip', __( 'Unblock', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link' ) : ' ' . self::button_html( 'url_block_ip', __( 'Block', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link', __( 'Block this address for good in Sidcraft Bot Shield?', 'sidcraft-autoseo' ) );
 			}
 			$out .= '</div>';
 		}
@@ -461,12 +485,32 @@ class Sidcraft_AutoSEO_Admin {
 				$msg = Sidcraft_AutoSEO_Links::repair( isset( $_POST['lid'] ) ? sanitize_key( wp_unslash( $_POST['lid'] ) ) : '', substr( $do, 5 ), isset( $_POST['new_url'] ) ? esc_url_raw( wp_unslash( $_POST['new_url'] ) ) : '' );
 				break;
 			case 'url_redirect':
+			case 'url_check_ip':
 			case 'url_block_ip':
+			case 'url_unblock_ip':
 				$tab = 'urls';
 				$ip  = isset( $_POST['ip'] ) ? sanitize_text_field( wp_unslash( $_POST['ip'] ) ) : '';
-				if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) { $msg = __( 'That is not a valid address.', 'sidcraft-autoseo' ); }
-				elseif ( ! class_exists( 'Sidcraft_BotShield_Settings' ) ) { $msg = __( 'Install and activate Sidcraft Bot Shield to block addresses.', 'sidcraft-autoseo' ); }
-				else { Sidcraft_BotShield_Settings::add_line( 'ip_block', $ip ); /* translators: %s: IP address */ $msg = sprintf( __( '%s is now on the Sidcraft Bot Shield block list.', 'sidcraft-autoseo' ), $ip ); }
+				if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) { $msg = __( 'That is not a valid address.', 'sidcraft-autoseo' ); break; }
+				list( $engine, $host ) = self::search_engine( $ip );
+				if ( 'url_check_ip' === $do ) {
+					if ( $engine ) { /* translators: 1: IP address 2: company 3: host name */ $msg = sprintf( __( '%1$s is a genuine %2$s crawler (%3$s). Do not block it: blocking it would remove your pages from search results.', 'sidcraft-autoseo' ), $ip, $engine, $host ); }
+					elseif ( $host ) { /* translators: 1: IP address 2: host name */ $msg = sprintf( __( '%1$s is NOT a verified search engine. Its host name is %2$s.', 'sidcraft-autoseo' ), $ip, $host ); }
+					else { /* translators: %s: IP address */ $msg = sprintf( __( '%s has no host name, so it is not a search engine crawler. Search engines can always be traced back to their own servers.', 'sidcraft-autoseo' ), $ip ); }
+					break;
+				}
+				if ( ! class_exists( 'Sidcraft_BotShield_Settings' ) ) { $msg = __( 'Install and activate Sidcraft Bot Shield to block or unblock addresses.', 'sidcraft-autoseo' ); break; }
+				if ( 'url_unblock_ip' === $do ) {
+					Sidcraft_BotShield_Settings::remove_line( 'ip_block', $ip );
+					if ( class_exists( 'Sidcraft_BotShield_Bans' ) ) { Sidcraft_BotShield_Bans::remove( $ip ); }
+					$still = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
+					/* translators: %s: IP address */
+					$msg = $still ? sprintf( __( '%s was removed from the list by itself, but a range on the Sidcraft Bot Shield block list still covers it. Edit that range in Settings → Bot Shield.', 'sidcraft-autoseo' ), $ip ) : sprintf( __( '%s is unblocked.', 'sidcraft-autoseo' ), $ip );
+					break;
+				}
+				if ( $engine ) { /* translators: 1: IP address 2: company */ $msg = sprintf( __( '%1$s is a genuine %2$s crawler, so it was not blocked. Blocking it would remove your pages from search results.', 'sidcraft-autoseo' ), $ip, $engine ); break; }
+				Sidcraft_BotShield_Settings::add_line( 'ip_block', $ip );
+				/* translators: %s: IP address */
+				$msg = sprintf( __( '%s is now on the Sidcraft Bot Shield block list. You can unblock it here at any time.', 'sidcraft-autoseo' ), $ip );
 				break;
 			case 'url_dismiss':
 			case 'urls_dismiss_all':
