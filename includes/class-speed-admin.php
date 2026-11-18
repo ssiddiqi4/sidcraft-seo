@@ -28,9 +28,9 @@ class Sidcraft_AutoSEO_Speed_Admin {
 		$sec = isset( $_GET['sec'] ) ? sanitize_key( wp_unslash( $_GET['sec'] ) ) : 'cache'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only screen switch.
 		$secs = array( 'cache' => __( 'Cache & minify', 'sidcraft-autoseo' ), 'database' => __( 'Database', 'sidcraft-autoseo' ), 'debug' => __( 'Performance & debug', 'sidcraft-autoseo' ) );
 		if ( ! isset( $secs[ $sec ] ) ) { $sec = 'cache'; }
-		echo '<ul class="subsubsub" style="margin:12px 0">';
-		$i = 0; foreach ( $secs as $k => $l ) { echo '<li><a href="' . esc_url( self::url( $k ) ) . '"' . ( $k === $sec ? ' class="current"' : '' ) . '>' . esc_html( $l ) . '</a>' . ( ++$i < count( $secs ) ? ' |' : '' ) . ' </li>'; }
-		echo '</ul><br class="clear">';
+		echo '<div style="margin:14px 0 18px;display:flex;flex-wrap:wrap;gap:8px">';
+		foreach ( $secs as $k => $l ) { echo '<a class="button ' . ( $k === $sec ? 'button-primary' : 'button-secondary' ) . '" style="font-size:14px;padding:4px 18px;height:auto;line-height:2" href="' . esc_url( self::url( $k ) ) . '"' . ( $k === $sec ? ' aria-current="page"' : '' ) . '>' . esc_html( $l ) . '</a>'; }
+		echo '</div>';
 		call_user_func( array( __CLASS__, 'sec_' . $sec ) );
 	}
 

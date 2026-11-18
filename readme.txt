@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -137,6 +137,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 1.6.1 =
+* Speed & Database: the three sections are now clear buttons.
+
 = 1.6.0 =
 * New "Speed & Database" tab, all switched off until you turn it on:
 * Page cache for pages and posts (visitors who are not logged in), cleared automatically when you change anything, with preload.
@@ -217,6 +220,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.6.1 =
+Makes the Speed & Database sections easier to see.
 
 = 1.6.0 =
 Adds page caching, minify, database clean-up and performance debugging. Everything new is off until you enable it.
