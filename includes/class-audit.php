@@ -177,7 +177,7 @@ class Sidcraft_AutoSEO_Audit {
 		$out = array();
 		foreach ( Sidcraft_AutoSEO_Util::post_types() as $pt ) {
 			$n = is_post_type_hierarchical( $pt ) ? 2000 : $limit;
-			$out = array_merge( $out, get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'posts_per_page' => $n, 'fields' => 'ids', 'orderby' => 'date', 'order' => 'DESC', 'no_found_rows' => true, 'suppress_filters' => true ) ) );
+			$out = array_merge( $out, get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'posts_per_page' => $n, 'fields' => 'ids', 'orderby' => 'date', 'order' => 'DESC', 'no_found_rows' => true ) ) );
 		}
 		$out = array_values( array_unique( array_map( 'intval', $out ) ) );
 		set_transient( 'sidcraft_autoseo_scope', array( 'limit' => $limit, 'ids' => $out ), 15 * MINUTE_IN_SECONDS );
