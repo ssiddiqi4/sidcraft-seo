@@ -332,6 +332,8 @@ class Sidcraft_AutoSEO_Admin {
 			$out .= '<div style="white-space:nowrap"><code>' . esc_html( $ip ) . '</code> ' . self::button_html( 'url_check_ip', __( 'Check', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link' );
 			if ( $shield ) {
 				$blocked = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
+				$safe    = method_exists( 'Sidcraft_BotShield_Settings', 'is_allowed_ip' ) && Sidcraft_BotShield_Settings::is_allowed_ip( $ip );
+				if ( $safe && ! $blocked ) { $out .= ' <em>' . esc_html__( 'never blocked', 'sidcraft-autoseo' ) . '</em></div>'; continue; }
 				$out .= $blocked ? ' <em>' . esc_html__( 'blocked', 'sidcraft-autoseo' ) . '</em> ' . self::button_html( 'url_unblock_ip', __( 'Unblock', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link' ) : ' ' . self::button_html( 'url_block_ip', __( 'Block', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link', __( 'Block this address for good in Sidcraft Bot Shield?', 'sidcraft-autoseo' ) );
 			}
 			$out .= '</div>';
@@ -506,6 +508,7 @@ class Sidcraft_AutoSEO_Admin {
 					$msg = $still ? sprintf( __( '%s was removed from the list by itself, but a range on the Sidcraft Bot Shield block list still covers it. Edit that range in Settings → Bot Shield.', 'sidcraft-autoseo' ), $ip ) : sprintf( __( '%s is unblocked.', 'sidcraft-autoseo' ), $ip );
 					break;
 				}
+				if ( method_exists( 'Sidcraft_BotShield_Settings', 'is_allowed_ip' ) && Sidcraft_BotShield_Settings::is_allowed_ip( $ip ) ) { /* translators: %s: IP address */ $msg = sprintf( __( '%s is on the Sidcraft Bot Shield never-block list, so it was not blocked. Remove it from that list first if you really want to block it.', 'sidcraft-autoseo' ), $ip ); break; }
 				if ( $engine ) { /* translators: 1: IP address 2: company */ $msg = sprintf( __( '%1$s is a genuine %2$s crawler, so it was not blocked. Blocking it would remove your pages from search results.', 'sidcraft-autoseo' ), $ip, $engine ); break; }
 				Sidcraft_BotShield_Settings::add_line( 'ip_block', $ip );
 				/* translators: %s: IP address */
