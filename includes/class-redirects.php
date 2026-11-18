@@ -108,6 +108,7 @@ class Sidcraft_AutoSEO_Redirects {
 		$raw  = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		$path = self::normalize( $raw );
 		if ( preg_match( '#\.(?:jpe?g|png|gif|webp|svg|ico|css|js|map|woff2?|ttf|php|xml|txt|zip|pdf)$#', $path ) ) { return; }
+		if ( self::is_scanner_path( $path ) ) { return; } // bot probes are not worth logging or fixing.
 		if ( Sidcraft_AutoSEO_Settings::on( 'fuzzy_404' ) ) {
 			$target = self::guess( $path );
 			if ( $target ) {
@@ -122,6 +123,11 @@ class Sidcraft_AutoSEO_Redirects {
 			'INSERT INTO %i (path, hits, last_seen, referrer) VALUES (%s, 1, %s, %s) ON DUPLICATE KEY UPDATE hits = hits + 1, last_seen = VALUES(last_seen), referrer = IF(VALUES(referrer) <> %s, VALUES(referrer), referrer)',
 			self::table404(), $path, current_time( 'mysql', true ), $ref, ''
 		) );
+	}
+
+	/** Paths that only vulnerability scanners ask for (web shells, config files, admin panels). */
+	public static function is_scanner_path( $path ) {
+		return (bool) preg_match( '#(^|/)(shell|shells|webshell|cmd|c99|r57|wso|b374k|backdoor|eval-stdin|phpmyadmin|pma|myadmin|adminer|wp-admin|wp-login|wp-config|wp-includes|xmlrpc|cgi-bin|boaform|actuator|solr|wp-content/plugins|\.env|\.git|\.svn|\.ds_store|\.aws|vendor/phpunit)(/|$|\.)#i', (string) $path );
 	}
 
 	/** Find the published page or post this missing URL most likely meant. */
@@ -172,6 +178,9 @@ class Sidcraft_AutoSEO_Redirects {
 	/** Keep the 404 log small: drop entries older than 90 days and cap the table. */
 	public static function prune() {
 		global $wpdb;
+		foreach ( (array) $wpdb->get_results( $wpdb->prepare( 'SELECT id, path FROM %i LIMIT %d', self::table404(), 1000 ) ) as $row ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
+			if ( self::is_scanner_path( $row->path ) ) { self::delete_404( $row->id ); }
+		}
 		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE last_seen < %s', self::table404(), gmdate( 'Y-m-d H:i:s', time() - 90 * DAY_IN_SECONDS ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
 		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id NOT IN (SELECT id FROM (SELECT id FROM %i ORDER BY hits DESC, last_seen DESC LIMIT 1000) t)', self::table404(), self::table404() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
 	}

@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.2
+Stable tag: 1.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -133,6 +133,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 1.4.3 =
+* Broken URLs: addresses that only vulnerability scanners request (such as /shell, /wp-login.php, /xmlrpc.php, /.env, /phpmyadmin) are no longer logged, and any already in the list are removed by the next daily clean-up.
+
 = 1.4.2 =
 * Fix: "Run audit now" no longer times out on sites with many pages. The audit now runs a few pages at a time from the Overview screen with a progress bar, retries a request that fails, and can be resumed. Fixes and re-checks use the same method instead of one long request.
 
@@ -167,6 +170,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.4.3 =
+Bot probes no longer fill the Broken URLs list.
 
 = 1.4.2 =
 Audit no longer times out on large sites.
