@@ -172,6 +172,14 @@ class Sidcraft_AutoSEO_Redirects {
 		);
 	}
 
+	/** Remove every address from the broken-URL list. Returns how many were removed. */
+	public static function clear_404() {
+		global $wpdb;
+		$n = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', self::table404() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', self::table404() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
+		return $n;
+	}
+
 	public static function delete_404( $id ) {
 		global $wpdb;
 		$wpdb->delete( self::table404(), array( 'id' => (int) $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.

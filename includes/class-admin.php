@@ -277,8 +277,9 @@ class Sidcraft_AutoSEO_Admin {
 			echo esc_html( sprintf( /* translators: %d: number of addresses */ _n( '%d has a likely match on your site.', '%d have a likely match on your site.', $with, 'sidcraft-autoseo' ), $with ) ) . '<br><br>';
 			self::button( 'urls_fix_all', __( 'Redirect them all to the suggested pages', 'sidcraft-autoseo' ), array(), 'button button-primary', __( 'Create a 301 redirect to the suggested page for every address that has one?', 'sidcraft-autoseo' ) );
 		} else {
-			echo esc_html__( 'None has an obvious match; choose where each should go.', 'sidcraft-autoseo' );
+			echo esc_html__( 'None has an obvious match; choose where each should go.', 'sidcraft-autoseo' ) . '<br><br>';
 		}
+		self::button( 'urls_dismiss_all', __( 'Dismiss all', 'sidcraft-autoseo' ), array(), 'button', __( 'Remove every address from this list? An address comes back only if someone requests it again.', 'sidcraft-autoseo' ) );
 		echo '</div>';
 		echo '<table class="widefat striped" style="margin-top:12px"><thead><tr><th>' . esc_html__( 'Broken URL', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Visits', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Last seen', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Came from', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Fix it', 'sidcraft-autoseo' ) . '</th></tr></thead><tbody>';
 		foreach ( $rows as $r ) {
@@ -443,9 +444,16 @@ class Sidcraft_AutoSEO_Admin {
 				break;
 			case 'url_redirect':
 			case 'url_dismiss':
+			case 'urls_dismiss_all':
 			case 'urls_fix_all':
 				$tab = 'urls';
 				global $wpdb;
+				if ( 'urls_dismiss_all' === $do ) {
+					$n = Sidcraft_AutoSEO_Redirects::clear_404();
+					/* translators: %d: number of addresses */
+					$msg = sprintf( _n( 'Dismissed %d address.', 'Dismissed %d addresses.', $n, 'sidcraft-autoseo' ), $n );
+					break;
+				}
 				if ( 'urls_fix_all' === $do ) {
 					$n = 0;
 					foreach ( $wpdb->get_results( $wpdb->prepare( 'SELECT id, path FROM %i LIMIT %d', Sidcraft_AutoSEO_Redirects::table404(), 200 ) ) as $r ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
