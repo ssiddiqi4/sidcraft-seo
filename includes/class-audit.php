@@ -18,7 +18,17 @@ class Sidcraft_AutoSEO_Audit {
 		add_action( 'wp_ajax_sidcraft_autoseo_audit', array( __CLASS__, 'ajax_step' ) );
 		add_action( 'save_post', array( __CLASS__, 'on_save' ), 30, 2 );
 		add_action( 'init', array( __CLASS__, 'schedule' ) );
+		add_action( 'init', array( __CLASS__, 'after_update' ), 5 );
 		add_action( 'save_post', function () { delete_transient( 'sidcraft_autoseo_slugs' ); } );
+	}
+
+	/** After an update, drop queued background scans from the old version so they cannot pile up. */
+	public static function after_update() {
+		if ( get_option( 'sidcraft_autoseo_ver' ) === SIDCRAFT_AUTOSEO_VERSION ) { return; }
+		wp_clear_scheduled_hook( 'sidcraft_autoseo_audit_more' );
+		wp_clear_scheduled_hook( Sidcraft_AutoSEO_Links::EVENT );
+		delete_transient( 'sidcraft_autoseo_resume' ); delete_transient( 'sidcraft_autoseo_scope' );
+		update_option( 'sidcraft_autoseo_ver', SIDCRAFT_AUTOSEO_VERSION, false );
 	}
 
 	/* ---------- the checks ---------- */
