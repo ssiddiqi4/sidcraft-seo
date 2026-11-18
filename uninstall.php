@@ -24,9 +24,12 @@ function sidcraft_autoseo_uninstall() {
 	if ( is_array( $settings ) && ! empty( $settings['remove_data'] ) ) {
 		$up = wp_get_upload_dir();
 		if ( empty( $up['error'] ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+			global $wp_filesystem;
 			foreach ( array( 'pages', 'min' ) as $sub ) {
 				$dir = trailingslashit( $up['basedir'] ) . 'sidcraft-autoseo/' . $sub;
-				if ( is_dir( $dir ) ) { foreach ( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ), RecursiveIteratorIterator::CHILD_FIRST ) as $f ) { $f->isDir() ? rmdir( $f->getPathname() ) : wp_delete_file( $f->getPathname() ); } rmdir( $dir ); } // phpcs:ignore WordPress.WP.AlternativeFunctions.rmdir_rmdir -- removing our own generated folders.
+				if ( $wp_filesystem && is_dir( $dir ) ) { $wp_filesystem->delete( $dir, true ); }
 			}
 		}
 		foreach ( array( 'sidcraft_autoseo_speed', 'sidcraft_autoseo_slow', 'sidcraft_autoseo_min_bad' ) as $option_name ) { delete_option( $option_name ); }

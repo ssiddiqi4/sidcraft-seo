@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.1
+Stable tag: 1.6.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -137,6 +137,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 1.6.2 =
+* Plugin Check: uninstall removes its folders through WP_Filesystem.
+
 = 1.6.1 =
 * Speed & Database: the three sections are now clear buttons.
 
@@ -220,6 +223,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.6.2 =
+Code tidy-up only.
 
 = 1.6.1 =
 Makes the Speed & Database sections easier to see.
