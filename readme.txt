@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 1.7.1 =
+* Plugin Check: schedule drop-downs print their own escaped output.
+
 = 1.7.0 =
 * Database maintenance schedule: choose every 1 to 180 days from a drop-down. 1 = every day at 12:01 AM in your site's time zone.
 * Clear-cache schedule with the same drop-down.
@@ -232,6 +235,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.7.1 =
+Code tidy-up only.
 
 = 1.7.0 =
 Adds timed database maintenance and timed cache clearing (every 1 to 180 days at 12:01 AM).
