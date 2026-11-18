@@ -178,7 +178,7 @@ class Sidcraft_AutoSEO_Redirects {
 	public static function is_scanner_path( $path ) {
 		// A path that is only a random ID (UUID) is never a real page: bots and browser tools generate these.
 		if ( preg_match( '#^/?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/?$#i', (string) $path ) ) { return true; }
-		return (bool) preg_match( '#(^|/)(shell|shells|webshell|cmd|c99|r57|wso|b374k|backdoor|eval-stdin|phpmyadmin|pma|myadmin|adminer|wp-admin|wp-login|wp-config|wp-includes|xmlrpc|cgi-bin|boaform|actuator|solr|wp-content/plugins|\.env|\.git|\.svn|\.ds_store|\.aws|vendor/phpunit)(/|$|\.)#i', (string) $path );
+		return (bool) preg_match( '#(^|/)(shell|shells|webshell|cmd|c99|r57|wso|b37[4]k|backdoor|eval-stdin|phpmyadmin|pma|myadmin|adminer|wp-admin|wp-login|wp-config|wp-includes|xmlrpc|cgi-bin|boaform|actuator|solr|wp-content/plugins|\.env|\.git|\.svn|\.ds_store|\.aws|vendor/phpunit)(/|$|\.)#i', (string) $path );
 	}
 
 	/** Find the published page or post this missing URL most likely meant. */
