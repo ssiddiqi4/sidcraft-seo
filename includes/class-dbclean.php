@@ -15,7 +15,7 @@ class Sidcraft_AutoSEO_DbClean {
 	/** What can be cleaned: key => label, help. */
 	public static function items() {
 		return array(
-			'revisions'   => array( __( 'Old post revisions', 'sidcraft-autoseo' ), __( 'Saved copies of every edit. The newest few per post are kept (set below).', 'sidcraft-autoseo' ) ),
+			'revisions'   => array( __( 'Old post revisions', 'sidcraft-autoseo' ), __( 'Saved copies of every edit. The newest few per post are kept (set above).', 'sidcraft-autoseo' ) ),
 			'autodrafts'  => array( __( 'Auto-drafts', 'sidcraft-autoseo' ), __( 'Empty drafts WordPress creates when you open “Add new” and never save.', 'sidcraft-autoseo' ) ),
 			'trash'       => array( __( 'Posts and pages in the Trash', 'sidcraft-autoseo' ), __( 'Items you already deleted.', 'sidcraft-autoseo' ) ),
 			'spam'        => array( __( 'Spam comments', 'sidcraft-autoseo' ), __( 'Comments marked as spam.', 'sidcraft-autoseo' ) ),

@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 1.7.2 =
+* The database maintenance schedule is now in its own box at the top of the Database screen.
+
 = 1.7.1 =
 * Plugin Check: schedule drop-downs print their own escaped output.
 
@@ -235,6 +238,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 1.7.2 =
+Makes the database schedule easier to find.
 
 = 1.7.1 =
 Code tidy-up only.

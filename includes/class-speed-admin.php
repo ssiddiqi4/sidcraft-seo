@@ -87,6 +87,13 @@ class Sidcraft_AutoSEO_Speed_Admin {
 
 	private static function sec_database() {
 		global $wpdb; $o = Sidcraft_AutoSEO_Speed::all(); $c = Sidcraft_AutoSEO_DbClean::counts(); $items = Sidcraft_AutoSEO_DbClean::items();
+		echo '<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid #2271b1;border-radius:4px;padding:6px 18px 10px;margin:0 0 18px;max-width:900px">';
+		self::form_open( 'save_db' );
+		echo '<h2 style="margin:10px 0">' . esc_html__( 'Database maintenance schedule', 'sidcraft-autoseo' ) . '</h2><p><label><strong>' . esc_html__( 'Optimize the database', 'sidcraft-autoseo' ) . '</strong> ';
+		self::days_select( 'db_days', $o['db_days'] );
+		echo '</label><br><span class="description">' . esc_html__( 'Cleans everything in the list below except embed caches, then compacts the tables. 1 = every day at 12:01 AM (your site’s time zone), up to every 180 days. Never = only when you press the button.', 'sidcraft-autoseo' ) . '</span>';
+		self::next_run( Sidcraft_AutoSEO_DbClean::HOOK );
+		echo '</p><p><label>' . esc_html__( 'When cleaning revisions, keep the newest', 'sidcraft-autoseo' ) . ' <input type="number" min="0" max="100" name="db_keep_rev" value="' . esc_attr( $o['db_keep_rev'] ) . '" style="width:70px"> ' . esc_html__( 'per post', 'sidcraft-autoseo' ) . '</label></p><p><button class="button button-primary">' . esc_html__( 'Save schedule', 'sidcraft-autoseo' ) . '</button></p></form></div>';
 		echo '<p>' . esc_html__( 'Tick what you want to clean and press the button. Nothing is removed until you do. Make a backup first if your site is important.', 'sidcraft-autoseo' ) . '</p>';
 		self::form_open( 'db_run' );
 		echo '<table class="widefat striped" style="max-width:900px"><thead><tr><th style="width:30px"></th><th>' . esc_html__( 'Item', 'sidcraft-autoseo' ) . '</th><th style="width:90px">' . esc_html__( 'Rows', 'sidcraft-autoseo' ) . '</th></tr></thead><tbody>';
@@ -94,13 +101,6 @@ class Sidcraft_AutoSEO_Speed_Admin {
 			echo '<tr><td><input type="checkbox" name="keys[]" value="' . esc_attr( $k ) . '"' . ( $c[ $k ] > 0 ? ' checked' : ' disabled' ) . '></td><td><strong>' . esc_html( $it[0] ) . '</strong><br><span class="description">' . esc_html( $it[1] ) . '</span></td><td>' . (int) $c[ $k ] . '</td></tr>';
 		}
 		echo '</tbody></table><p><button class="button button-primary" onclick="return confirm(' . esc_attr( wp_json_encode( __( 'Delete the ticked items permanently?', 'sidcraft-autoseo' ) ) ) . ')">' . esc_html__( 'Clean selected', 'sidcraft-autoseo' ) . '</button></p></form>';
-		self::form_open( 'save_db' );
-		echo '<h2>' . esc_html__( 'Settings', 'sidcraft-autoseo' ) . '</h2><p><label>' . esc_html__( 'When cleaning revisions, keep the newest', 'sidcraft-autoseo' ) . ' <input type="number" min="0" max="100" name="db_keep_rev" value="' . esc_attr( $o['db_keep_rev'] ) . '" style="width:70px"> ' . esc_html__( 'per post', 'sidcraft-autoseo' ) . '</label></p>';
-		echo '<p><label><strong>' . esc_html__( 'Maintenance schedule', 'sidcraft-autoseo' ) . '</strong> ';
-		self::days_select( 'db_days', $o['db_days'] );
-		echo '</label><br><span class="description">' . esc_html__( 'Cleans everything above except embed caches, then compacts the tables. 1 = every day at 12:01 AM (your site’s time zone).', 'sidcraft-autoseo' ) . '</span>';
-		self::next_run( Sidcraft_AutoSEO_DbClean::HOOK );
-		echo '</p><p><button class="button">' . esc_html__( 'Save settings', 'sidcraft-autoseo' ) . '</button></p></form>';
 		echo '<h2>' . esc_html__( 'Tables', 'sidcraft-autoseo' ) . '</h2>';
 		if ( Sidcraft_AutoSEO_DbClean::is_mysql() ) {
 			$t = Sidcraft_AutoSEO_DbClean::tables(); $tot = 0; $free = 0;
