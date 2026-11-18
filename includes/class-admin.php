@@ -87,6 +87,16 @@ class Sidcraft_AutoSEO_Admin {
 		echo '</div>';
 	}
 
+	/** Tags the small action buttons need (used when their HTML is printed inside a table). */
+	private static function kses() {
+		return array(
+			'form' => array( 'method' => array(), 'action' => array(), 'style' => array(), 'onsubmit' => array() ),
+			'input' => array( 'type' => array(), 'name' => array(), 'value' => array() ),
+			'button' => array( 'class' => array(), 'type' => array(), 'name' => array(), 'value' => array() ),
+			'div' => array( 'style' => array() ), 'code' => array(), 'em' => array(), 'span' => array( 'class' => array() ),
+		);
+	}
+
 	private static function button_html( $do, $label, $extra = array(), $class = 'button', $confirm = '' ) { ob_start(); self::button( $do, $label, $extra, $class, $confirm ); return ob_get_clean(); }
 
 	private static function button( $do, $label, $extra = array(), $class = 'button', $confirm = '' ) {
@@ -288,7 +298,7 @@ class Sidcraft_AutoSEO_Admin {
 		echo '<table class="widefat striped" style="margin-top:12px"><thead><tr><th>' . esc_html__( 'Broken URL', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Visits', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Last seen', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'IP address', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Came from', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Fix it', 'sidcraft-autoseo' ) . '</th></tr></thead><tbody>';
 		foreach ( $rows as $r ) {
 			$target = $sug[ $r->id ] ? $sug[ $r->id ] : home_url( '/' );
-			echo '<tr><td style="word-break:break-all"><code>' . esc_html( $r->path ) . '</code></td><td>' . (int) $r->hits . '</td><td>' . esc_html( wp_date( get_option( 'date_format' ), strtotime( $r->last_seen . ' UTC' ) ) ) . '</td><td>' . self::ip_cell( $r ) . '</td><td style="word-break:break-all">';
+			echo '<tr><td style="word-break:break-all"><code>' . esc_html( $r->path ) . '</code></td><td>' . (int) $r->hits . '</td><td>' . esc_html( wp_date( get_option( 'date_format' ), strtotime( $r->last_seen . ' UTC' ) ) ) . '</td><td>' . wp_kses( self::ip_cell( $r ), self::kses() ) . '</td><td style="word-break:break-all">';
 			echo $r->referrer ? esc_html( $r->referrer ) : '<span class="description">' . esc_html__( 'direct or unknown', 'sidcraft-autoseo' ) . '</span>';
 			echo '</td><td><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 			wp_nonce_field( 'sidcraft_autoseo_action' );
@@ -361,7 +371,7 @@ class Sidcraft_AutoSEO_Admin {
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin:0 0 12px">'; wp_nonce_field( 'sidcraft_autoseo_action' ); echo '<input type="hidden" name="action" value="sidcraft_autoseo_action"><input type="hidden" name="do" value="urls_gone"><label>' . esc_html__( 'Mark a folder as gone for good:', 'sidcraft-autoseo' ) . ' <input type="text" name="prefix" placeholder="/itm/" style="width:180px"></label> <button class="button">' . esc_html__( 'Mark as gone (410)', 'sidcraft-autoseo' ) . '</button></form>';
 		if ( $gone ) {
 			echo '<p><strong>' . esc_html__( 'Answered with 410 Gone:', 'sidcraft-autoseo' ) . '</strong> ';
-			foreach ( $gone as $g ) { echo '<code>' . esc_html( $g ) . '</code> ' . self::button_html( 'urls_gone_remove', __( 'Remove', 'sidcraft-autoseo' ), array( 'prefix' => $g ), 'button-link' ) . ' &nbsp; '; }
+			foreach ( $gone as $g ) { echo '<code>' . esc_html( $g ) . '</code> ' . wp_kses( self::button_html( 'urls_gone_remove', __( 'Remove', 'sidcraft-autoseo' ), array( 'prefix' => $g ), 'button-link' ), self::kses() ) . ' &nbsp; '; }
 			echo '</p>';
 		}
 	}
