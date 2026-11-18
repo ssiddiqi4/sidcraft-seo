@@ -87,6 +87,8 @@ class Sidcraft_AutoSEO_Admin {
 		echo '</div>';
 	}
 
+	private static function button_html( $do, $label, $extra = array(), $class = 'button', $confirm = '' ) { ob_start(); self::button( $do, $label, $extra, $class, $confirm ); return ob_get_clean(); }
+
 	private static function button( $do, $label, $extra = array(), $class = 'button', $confirm = '' ) {
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin:0 8px 8px 0"' . ( '' !== $confirm ? ' onsubmit="return confirm(' . esc_attr( wp_json_encode( $confirm ) ) . ');"' : '' ) . '>';
 		wp_nonce_field( 'sidcraft_autoseo_action' );
@@ -281,10 +283,10 @@ class Sidcraft_AutoSEO_Admin {
 		}
 		self::button( 'urls_dismiss_all', __( 'Dismiss all', 'sidcraft-autoseo' ), array(), 'button', __( 'Remove every address from this list? An address comes back only if someone requests it again.', 'sidcraft-autoseo' ) );
 		echo '</div>';
-		echo '<table class="widefat striped" style="margin-top:12px"><thead><tr><th>' . esc_html__( 'Broken URL', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Visits', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Last seen', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Came from', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Fix it', 'sidcraft-autoseo' ) . '</th></tr></thead><tbody>';
+		echo '<table class="widefat striped" style="margin-top:12px"><thead><tr><th>' . esc_html__( 'Broken URL', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Visits', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Last seen', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'IP address', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Came from', 'sidcraft-autoseo' ) . '</th><th>' . esc_html__( 'Fix it', 'sidcraft-autoseo' ) . '</th></tr></thead><tbody>';
 		foreach ( $rows as $r ) {
 			$target = $sug[ $r->id ] ? $sug[ $r->id ] : home_url( '/' );
-			echo '<tr><td style="word-break:break-all"><code>' . esc_html( $r->path ) . '</code></td><td>' . (int) $r->hits . '</td><td>' . esc_html( wp_date( get_option( 'date_format' ), strtotime( $r->last_seen . ' UTC' ) ) ) . '</td><td style="word-break:break-all">';
+			echo '<tr><td style="word-break:break-all"><code>' . esc_html( $r->path ) . '</code></td><td>' . (int) $r->hits . '</td><td>' . esc_html( wp_date( get_option( 'date_format' ), strtotime( $r->last_seen . ' UTC' ) ) ) . '</td><td>' . self::ip_cell( $r ) . '</td><td style="word-break:break-all">';
 			echo $r->referrer ? esc_html( $r->referrer ) : '<span class="description">' . esc_html__( 'direct or unknown', 'sidcraft-autoseo' ) . '</span>';
 			echo '</td><td><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 			wp_nonce_field( 'sidcraft_autoseo_action' );
@@ -295,6 +297,22 @@ class Sidcraft_AutoSEO_Admin {
 			echo '</form></td></tr>';
 		}
 		echo '</tbody></table>';
+	}
+
+	/** The addresses that asked for a missing URL, each with a button to block it in Sidcraft Bot Shield. */
+	private static function ip_cell( $r ) {
+		$ips = isset( $r->ips ) && '' !== $r->ips ? explode( ',', $r->ips ) : array();
+		if ( ! $ips ) { return '<span class="description">' . esc_html__( 'not recorded', 'sidcraft-autoseo' ) . '</span>'; }
+		$shield = class_exists( 'Sidcraft_BotShield_Settings' ); $out = '';
+		foreach ( $ips as $ip ) {
+			$out .= '<div style="white-space:nowrap"><code>' . esc_html( $ip ) . '</code>';
+			if ( $shield ) {
+				$blocked = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
+				$out .= $blocked ? ' <em>' . esc_html__( 'blocked', 'sidcraft-autoseo' ) . '</em>' : ' ' . self::button_html( 'url_block_ip', __( 'Block', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link', __( 'Block this address for good in Sidcraft Bot Shield?', 'sidcraft-autoseo' ) );
+			}
+			$out .= '</div>';
+		}
+		return $out;
 	}
 
 	private static function tab_suggest() {
@@ -443,6 +461,13 @@ class Sidcraft_AutoSEO_Admin {
 				$msg = Sidcraft_AutoSEO_Links::repair( isset( $_POST['lid'] ) ? sanitize_key( wp_unslash( $_POST['lid'] ) ) : '', substr( $do, 5 ), isset( $_POST['new_url'] ) ? esc_url_raw( wp_unslash( $_POST['new_url'] ) ) : '' );
 				break;
 			case 'url_redirect':
+			case 'url_block_ip':
+				$tab = 'urls';
+				$ip  = isset( $_POST['ip'] ) ? sanitize_text_field( wp_unslash( $_POST['ip'] ) ) : '';
+				if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) { $msg = __( 'That is not a valid address.', 'sidcraft-autoseo' ); }
+				elseif ( ! class_exists( 'Sidcraft_BotShield_Settings' ) ) { $msg = __( 'Install and activate Sidcraft Bot Shield to block addresses.', 'sidcraft-autoseo' ); }
+				else { Sidcraft_BotShield_Settings::add_line( 'ip_block', $ip ); /* translators: %s: IP address */ $msg = sprintf( __( '%s is now on the Sidcraft Bot Shield block list.', 'sidcraft-autoseo' ), $ip ); }
+				break;
 			case 'url_dismiss':
 			case 'urls_dismiss_all':
 			case 'urls_fix_all':

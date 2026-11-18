@@ -29,6 +29,7 @@ class Sidcraft_AutoSEO_Redirects {
 			hits bigint(20) unsigned NOT NULL DEFAULT 1,
 			last_seen datetime NOT NULL,
 			referrer varchar(250) NOT NULL DEFAULT '',
+			ips varchar(250) NOT NULL DEFAULT '',
 			PRIMARY KEY  (id),
 			UNIQUE KEY path (path)
 		) $charset;" );
@@ -119,10 +120,27 @@ class Sidcraft_AutoSEO_Redirects {
 		}
 		global $wpdb;
 		$ref = isset( $_SERVER['HTTP_REFERER'] ) ? substr( esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ), 0, 250 ) : '';
+		$ips = self::remember_ip( $path );
 		$wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
-			'INSERT INTO %i (path, hits, last_seen, referrer) VALUES (%s, 1, %s, %s) ON DUPLICATE KEY UPDATE hits = hits + 1, last_seen = VALUES(last_seen), referrer = IF(VALUES(referrer) <> %s, VALUES(referrer), referrer)',
-			self::table404(), $path, current_time( 'mysql', true ), $ref, ''
+			'INSERT INTO %i (path, hits, last_seen, referrer, ips) VALUES (%s, 1, %s, %s, %s) ON DUPLICATE KEY UPDATE hits = hits + 1, last_seen = VALUES(last_seen), referrer = IF(VALUES(referrer) <> %s, VALUES(referrer), referrer), ips = VALUES(ips)',
+			self::table404(), $path, current_time( 'mysql', true ), $ref, $ips, ''
 		) );
+	}
+
+	/** The address of the visitor. Uses Sidcraft Bot Shield's setting for proxies and Cloudflare when that plugin is active. */
+	public static function visitor_ip() {
+		if ( class_exists( 'Sidcraft_BotShield_Guard' ) ) { return (string) Sidcraft_BotShield_Guard::client_ip(); }
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '';
+	}
+
+	/** The last few different addresses that asked for this path (newest first), as a comma-separated string. */
+	private static function remember_ip( $path ) {
+		global $wpdb;
+		$ip  = self::visitor_ip();
+		$old = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT ips FROM %i WHERE path = %s', self::table404(), $path ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
+		$list = array_values( array_filter( array_unique( array_merge( '' !== $ip ? array( $ip ) : array(), '' !== $old ? explode( ',', $old ) : array() ) ) ) );
+		return substr( implode( ',', array_slice( $list, 0, 5 ) ), 0, 250 );
 	}
 
 	/** Paths that only vulnerability scanners ask for (web shells, config files, admin panels). */
