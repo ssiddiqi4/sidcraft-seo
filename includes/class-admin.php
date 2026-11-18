@@ -484,7 +484,6 @@ class Sidcraft_AutoSEO_Admin {
 				$tab = 'links';
 				$msg = Sidcraft_AutoSEO_Links::repair( isset( $_POST['lid'] ) ? sanitize_key( wp_unslash( $_POST['lid'] ) ) : '', substr( $do, 5 ), isset( $_POST['new_url'] ) ? esc_url_raw( wp_unslash( $_POST['new_url'] ) ) : '' );
 				break;
-			case 'url_redirect':
 			case 'url_check_ip':
 			case 'url_block_ip':
 			case 'url_unblock_ip':
@@ -512,6 +511,7 @@ class Sidcraft_AutoSEO_Admin {
 				/* translators: %s: IP address */
 				$msg = sprintf( __( '%s is now on the Sidcraft Bot Shield block list. You can unblock it here at any time.', 'sidcraft-autoseo' ), $ip );
 				break;
+			case 'url_redirect':
 			case 'url_dismiss':
 			case 'urls_dismiss_all':
 			case 'urls_fix_all':
