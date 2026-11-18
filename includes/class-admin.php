@@ -265,6 +265,7 @@ class Sidcraft_AutoSEO_Admin {
 		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY hits DESC, last_seen DESC LIMIT %d', Sidcraft_AutoSEO_Redirects::table404(), 100 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
 		echo '<p>' . esc_html__( 'Addresses on your site that visitors or search engines asked for but that do not exist. Each one is a dead end. Send it to the right page with a click and it is fixed for good.', 'sidcraft-autoseo' ) . '</p>';
 		echo '<p class="description">' . esc_html__( 'Near misses are repaired automatically while the setting “Repair near-miss broken URLs” is on, so what is listed here is what could not be matched with confidence.', 'sidcraft-autoseo' ) . '</p>';
+		self::gone_box();
 		if ( ! $rows ) {
 			echo '<div class="sidcraft-autoseo-card sidcraft-autoseo-tone-g" style="display:block;max-width:520px"><b>0</b>' . esc_html__( 'No broken URLs recorded. Nice.', 'sidcraft-autoseo' ) . '</div>';
 			return;
@@ -340,6 +341,29 @@ class Sidcraft_AutoSEO_Admin {
 			$out .= '</div>';
 		}
 		return $out;
+	}
+
+	/** Groups of broken addresses that share a first folder (like /itm/) and the folders already answered with 410 Gone. */
+	private static function gone_box() {
+		global $wpdb;
+		$count = array();
+		foreach ( (array) $wpdb->get_col( $wpdb->prepare( 'SELECT path FROM %i LIMIT %d', Sidcraft_AutoSEO_Redirects::table404(), 1000 ) ) as $path ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
+			$parts = explode( '/', trim( $path, '/' ) ); if ( count( $parts ) < 2 ) { continue; }
+			$k = '/' . $parts[0] . '/'; $count[ $k ] = ( $count[ $k ] ?? 0 ) + 1;
+		}
+		arsort( $count ); $groups = array_filter( $count, function ( $n ) { return $n >= 3; } );
+		$gone = Sidcraft_AutoSEO_Redirects::gone_prefixes();
+		if ( $groups ) {
+			echo '<div class="sidcraft-autoseo-banner" style="margin-bottom:12px"><strong>' . esc_html__( 'Many addresses start the same way.', 'sidcraft-autoseo' ) . '</strong> ' . esc_html__( 'If a whole folder never existed on your site (for example old spam pages, or another site’s addresses), tell search engines it is gone for good. The site then answers “410 Gone”, Google stops asking, and these addresses leave this list.', 'sidcraft-autoseo' ) . '<br><br>';
+			foreach ( array_slice( $groups, 0, 6, true ) as $pre => $n ) { self::button( 'urls_gone', sprintf( /* translators: 1: folder 2: number of addresses */ __( '%1$s is gone for good (%2$d addresses)', 'sidcraft-autoseo' ), $pre, $n ), array( 'prefix' => $pre ), 'button', sprintf( /* translators: %s: folder */ __( 'Answer “410 Gone” for everything under %s and remove it from this list? Only do this if no real page of your site lives there.', 'sidcraft-autoseo' ), $pre ) ); }
+			echo '</div>';
+		}
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin:0 0 12px">'; wp_nonce_field( 'sidcraft_autoseo_action' ); echo '<input type="hidden" name="action" value="sidcraft_autoseo_action"><input type="hidden" name="do" value="urls_gone"><label>' . esc_html__( 'Mark a folder as gone for good:', 'sidcraft-autoseo' ) . ' <input type="text" name="prefix" placeholder="/itm/" style="width:180px"></label> <button class="button">' . esc_html__( 'Mark as gone (410)', 'sidcraft-autoseo' ) . '</button></form>';
+		if ( $gone ) {
+			echo '<p><strong>' . esc_html__( 'Answered with 410 Gone:', 'sidcraft-autoseo' ) . '</strong> ';
+			foreach ( $gone as $g ) { echo '<code>' . esc_html( $g ) . '</code> ' . self::button_html( 'urls_gone_remove', __( 'Remove', 'sidcraft-autoseo' ), array( 'prefix' => $g ), 'button-link' ) . ' &nbsp; '; }
+			echo '</p>';
+		}
 	}
 
 	/** Edit the SEO fields of one page by hand. */
@@ -502,6 +526,18 @@ class Sidcraft_AutoSEO_Admin {
 			case 'link_ignore':
 				$tab = 'links';
 				$msg = Sidcraft_AutoSEO_Links::repair( isset( $_POST['lid'] ) ? sanitize_key( wp_unslash( $_POST['lid'] ) ) : '', substr( $do, 5 ), isset( $_POST['new_url'] ) ? esc_url_raw( wp_unslash( $_POST['new_url'] ) ) : '' );
+				break;
+			case 'urls_gone':
+				$tab = 'urls';
+				$pre = isset( $_POST['prefix'] ) ? sanitize_text_field( wp_unslash( $_POST['prefix'] ) ) : '';
+				$n   = Sidcraft_AutoSEO_Redirects::mark_gone( $pre );
+				if ( false === $n ) { $msg = __( 'That folder cannot be marked as gone: it is too short, or a real page of your site lives there.', 'sidcraft-autoseo' ); }
+				else { /* translators: %d: number of addresses */ $msg = sprintf( _n( 'Done. It now answers “410 Gone”. %d address was removed from the list.', 'Done. It now answers “410 Gone”. %d addresses were removed from the list.', $n, 'sidcraft-autoseo' ), $n ); }
+				break;
+			case 'urls_gone_remove':
+				$tab = 'urls';
+				Sidcraft_AutoSEO_Redirects::unmark_gone( isset( $_POST['prefix'] ) ? sanitize_text_field( wp_unslash( $_POST['prefix'] ) ) : '' );
+				$msg = __( 'Removed. Addresses there answer “404 not found” again.', 'sidcraft-autoseo' );
 				break;
 			case 'url_check_ip':
 			case 'url_block_ip':

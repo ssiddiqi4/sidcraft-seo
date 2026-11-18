@@ -103,11 +103,42 @@ class Sidcraft_AutoSEO_Redirects {
 		}
 	}
 
+	const GONE = 'sidcraft_autoseo_gone';
+
+	/** Address beginnings (like /itm/) that never existed on this site and are answered with 410 Gone. */
+	public static function gone_prefixes() { $g = get_option( self::GONE, array() ); return is_array( $g ) ? array_values( $g ) : array(); }
+
+	public static function is_gone( $path ) {
+		foreach ( self::gone_prefixes() as $p ) { if ( 0 === strpos( $path . '/', $p ) ) { return true; } }
+		return false;
+	}
+
+	/** Is any published page or post at an address that starts like this? Then it must not be marked as gone. */
+	public static function prefix_in_use( $prefix ) {
+		foreach ( get_posts( array( 'post_type' => 'any', 'post_status' => 'publish', 'posts_per_page' => 3000, 'fields' => 'ids', 'no_found_rows' => true ) ) as $id ) {
+			if ( 0 === strpos( self::normalize( get_permalink( $id ) ) . '/', $prefix ) ) { return true; }
+		}
+		return false;
+	}
+
+	/** Add a prefix and remove the matching entries from the broken-URL list. Returns the number removed, or false if the prefix is not allowed. */
+	public static function mark_gone( $prefix ) {
+		$prefix = strtolower( '/' . trim( preg_replace( '#[^a-zA-Z0-9/_\-.~%]#', '', (string) $prefix ), '/' ) . '/' );
+		if ( strlen( $prefix ) < 3 || '/wp-' === substr( $prefix, 0, 4 ) || self::prefix_in_use( $prefix ) ) { return false; }
+		$g = self::gone_prefixes(); if ( ! in_array( $prefix, $g, true ) ) { $g[] = $prefix; update_option( self::GONE, array_slice( $g, 0, 100 ), false ); }
+		global $wpdb;
+		$n = (int) $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE path LIKE %s', self::table404(), $wpdb->esc_like( rtrim( $prefix, '/' ) ) . '/%' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
+		return $n;
+	}
+
+	public static function unmark_gone( $prefix ) { update_option( self::GONE, array_values( array_diff( self::gone_prefixes(), array( $prefix ) ) ), false ); }
+
 	/** On a 404: try to find the page the visitor meant; otherwise record it. */
 	public static function handle_404() {
 		if ( self::skip_request() || ! is_404() ) { return; }
 		$raw  = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		$path = self::normalize( $raw );
+		if ( self::is_gone( $path ) ) { status_header( 410 ); nocache_headers(); header( 'X-Robots-Tag: noindex' ); return; } // never existed here: tell search engines to forget it, and do not list it.
 		if ( preg_match( '#\.(?:jpe?g|png|gif|webp|svg|ico|css|js|map|woff2?|ttf|php|xml|txt|zip|pdf)$#', $path ) ) { return; }
 		if ( self::is_scanner_path( $path ) ) { return; } // bot probes are not worth logging or fixing.
 		if ( Sidcraft_AutoSEO_Settings::on( 'fuzzy_404' ) ) {
