@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Sidcraft AutoSEO
  * Description:       Hands-off SEO for WordPress pages and posts: automatic titles and descriptions, social cards, structured data, sitemap, redirects, image alt text, instant search-engine notification and a daily self-audit. Works out of the box with no setup.
- * Version:           1.4.9
+ * Version:           1.5.0
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Suhaib Siddiqi
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SIDCRAFT_AUTOSEO_VERSION', '1.4.9' );
+define( 'SIDCRAFT_AUTOSEO_VERSION', '1.5.0' );
 define( 'SIDCRAFT_AUTOSEO_FILE', __FILE__ );
 define( 'SIDCRAFT_AUTOSEO_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -36,6 +36,7 @@ require_once SIDCRAFT_AUTOSEO_DIR . 'includes/class-audit.php';
 require_once SIDCRAFT_AUTOSEO_DIR . 'includes/class-fixer.php';
 require_once SIDCRAFT_AUTOSEO_DIR . 'includes/class-links.php';
 require_once SIDCRAFT_AUTOSEO_DIR . 'includes/class-suggest.php';
+require_once SIDCRAFT_AUTOSEO_DIR . 'includes/class-editor.php';
 require_once SIDCRAFT_AUTOSEO_DIR . 'includes/class-admin.php';
 
 register_activation_hook( __FILE__, array( 'Sidcraft_AutoSEO_Redirects', 'install' ) );
@@ -55,6 +56,7 @@ add_action(
 		Sidcraft_AutoSEO_Links::init();
 		if ( is_admin() ) {
 			Sidcraft_AutoSEO_Admin::init();
+			if ( ! Sidcraft_AutoSEO_Util::other_seo_plugin() ) { Sidcraft_AutoSEO_Editor::init(); }
 		}
 		// Output modules step aside when another SEO plugin is already doing the same job.
 		if ( ! Sidcraft_AutoSEO_Util::other_seo_plugin() ) {

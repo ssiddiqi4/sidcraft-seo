@@ -76,7 +76,7 @@ class Sidcraft_AutoSEO_Admin {
 	public static function page() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification
-		if ( ! isset( self::tabs()[ $tab ] ) && 'suggest' !== $tab ) { $tab = 'overview'; }
+		if ( ! isset( self::tabs()[ $tab ] ) && ! in_array( $tab, array( 'suggest', 'edit' ), true ) ) { $tab = 'overview'; }
 		echo '<div class="wrap sidcraft-autoseo-wrap"><h1>Sidcraft AutoSEO</h1><h2 class="nav-tab-wrapper">';
 		foreach ( self::tabs() as $k => $label ) {
 			printf( '<a class="nav-tab %s" href="%s">%s</a>', $k === $tab ? 'nav-tab-active' : '', esc_url( admin_url( 'admin.php?page=sidcraft-autoseo&tab=' . $k ) ), esc_html( $label ) );
@@ -200,6 +200,7 @@ class Sidcraft_AutoSEO_Admin {
 			}
 			foreach ( $issues as $i ) { if ( isset( $cat[ $i['id'] ] ) ) { $fixable = true; } }
 			echo '<tr><td><a href="' . esc_url( get_edit_post_link( $p->ID ) ) . '"><strong>' . esc_html( get_the_title( $p ) ) . '</strong></a><br><a href="' . esc_url( get_permalink( $p ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'View', 'sidcraft-autoseo' ) . '</a></td><td>' . esc_html( $p->post_type ) . '</td><td>' . wp_kses_post( self::badge( (int) get_post_meta( $p->ID, '_sidcraft_autoseo_score', true ) ) ) . '</td><td>' . esc_html( Sidcraft_AutoSEO_Meta::focus_for_post( $p->ID ) ) . '</td><td>' . ( $lines ? wp_kses( implode( '<br>', $lines ), array( 'em' => array(), 'br' => array() ) ) : '—' ) . '</td><td>';
+			echo '<a class="button button-primary" style="margin:0 8px 8px 0" href="' . esc_url( add_query_arg( array( 'page' => 'sidcraft-autoseo', 'tab' => 'edit', 'id' => $p->ID ), admin_url( 'admin.php' ) ) ) . '">' . esc_html__( 'Edit SEO', 'sidcraft-autoseo' ) . '</a>';
 			if ( $fixable ) { self::button( 'fix_post', __( 'Fix automatically', 'sidcraft-autoseo' ), array( 'id' => $p->ID ) ); }
 			if ( $issues ) { echo '<a class="button" href="' . esc_url( add_query_arg( array( 'page' => 'sidcraft-autoseo', 'tab' => 'suggest', 'id' => $p->ID ), admin_url( 'admin.php' ) ) ) . '">' . esc_html__( 'Suggestions', 'sidcraft-autoseo' ) . '</a>'; }
 			echo '</td></tr>';
@@ -339,6 +340,22 @@ class Sidcraft_AutoSEO_Admin {
 			$out .= '</div>';
 		}
 		return $out;
+	}
+
+	/** Edit the SEO fields of one page by hand. */
+	private static function tab_edit() {
+		$id   = isset( $_GET['id'] ) ? (int) $_GET['id'] : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only screen.
+		$post = $id ? get_post( $id ) : null;
+		if ( ! $post || ! current_user_can( 'edit_post', $id ) ) { echo '<p>' . esc_html__( 'Page not found.', 'sidcraft-autoseo' ) . '</p>'; return; }
+		echo '<p><a href="' . esc_url( self::pages_url() ) . '">← ' . esc_html__( 'Back to Pages & Posts', 'sidcraft-autoseo' ) . '</a> &nbsp;|&nbsp; <a href="' . esc_url( get_edit_post_link( $id ) ) . '">' . esc_html__( 'Open the editor', 'sidcraft-autoseo' ) . '</a> &nbsp;|&nbsp; <a href="' . esc_url( get_permalink( $post ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'View the page', 'sidcraft-autoseo' ) . '</a></p>';
+		echo '<h2>' . esc_html( get_the_title( $post ) ) . '</h2>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		wp_nonce_field( Sidcraft_AutoSEO_Editor::NONCE . $id, 'sidcraft_autoseo_nonce' );
+		echo '<input type="hidden" name="action" value="sidcraft_autoseo_edit"><input type="hidden" name="id" value="' . (int) $id . '">';
+		Sidcraft_AutoSEO_Editor::fields( $post );
+		echo '<p class="description">' . esc_html__( 'Leave a field empty to keep it automatic. What you type here is used exactly as written.', 'sidcraft-autoseo' ) . '</p>';
+		submit_button( __( 'Save SEO settings', 'sidcraft-autoseo' ) );
+		echo '</form>';
 	}
 
 	private static function tab_suggest() {

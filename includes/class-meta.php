@@ -24,9 +24,13 @@ class Sidcraft_AutoSEO_Meta {
 	public static function title_for_post( $post ) {
 		$post = get_post( $post );
 		$ov   = self::override( $post->ID, 'title' );
-		if ( '' !== $ov ) { return $ov; }
-		$base = Sidcraft_AutoSEO_Util::clean( get_the_title( $post ) );
-		return self::with_suffix( $base );
+		return '' !== $ov ? $ov : self::auto_title( $post );
+	}
+
+	/** The title made automatically (what is used when nothing is typed by hand). */
+	public static function auto_title( $post ) {
+		$post = get_post( $post );
+		return self::with_suffix( Sidcraft_AutoSEO_Util::clean( get_the_title( $post ) ) );
 	}
 
 	/** "Title | Site" when it fits in 60 characters, otherwise just the title. */
@@ -43,7 +47,12 @@ class Sidcraft_AutoSEO_Meta {
 	public static function description_for_post( $post ) {
 		$post = get_post( $post );
 		$ov   = self::override( $post->ID, 'desc' );
-		if ( '' !== $ov ) { return $ov; }
+		return '' !== $ov ? $ov : self::auto_description( $post );
+	}
+
+	/** The description made automatically. */
+	public static function auto_description( $post ) {
+		$post = get_post( $post );
 		if ( has_excerpt( $post ) ) {
 			$d = Sidcraft_AutoSEO_Util::clean( wp_strip_all_tags( $post->post_excerpt ) );
 			if ( Sidcraft_AutoSEO_Util::len( $d ) >= 50 ) { return Sidcraft_AutoSEO_Util::truncate( $d, 158 ); }
@@ -74,6 +83,7 @@ class Sidcraft_AutoSEO_Meta {
 			$c['type']  = 'website';
 			$c['image'] = Sidcraft_AutoSEO_Util::post_image( $post );
 			if ( self::override( $post->ID, 'noindex' ) ) { $c['noindex'] = true; }
+			self::apply_manual( $c, $post );
 		} elseif ( is_singular() ) {
 			$post = get_queried_object();
 			$c['post']  = $post;
@@ -83,6 +93,7 @@ class Sidcraft_AutoSEO_Meta {
 			$c['type']  = is_singular( 'page' ) ? 'website' : 'article';
 			$c['image'] = Sidcraft_AutoSEO_Util::post_image( $post );
 			if ( self::override( $post->ID, 'noindex' ) ) { $c['noindex'] = true; }
+			self::apply_manual( $c, $post );
 		} elseif ( is_front_page() || is_home() ) {
 			$c['title'] = $tag && Sidcraft_AutoSEO_Util::len( $site . ' – ' . $tag ) <= 62 ? $site . ' – ' . $tag : $site;
 			$c['desc']  = $tag ? Sidcraft_AutoSEO_Util::truncate( $tag . '. ' . $site, 158 ) : $site;
@@ -125,7 +136,18 @@ class Sidcraft_AutoSEO_Meta {
 		return apply_filters( 'sidcraft_autoseo_current', $c );
 	}
 
+	/** Hand-written social card values and nofollow for a post. */
+	private static function apply_manual( array &$c, $post ) {
+		$c['og_title'] = self::override( $post->ID, 'og_title' ); $c['og_desc'] = self::override( $post->ID, 'og_desc' );
+		$img = self::override( $post->ID, 'og_image' );
+		if ( '' !== $img ) { $c['image'] = array( 'url' => $img, 'w' => 0, 'h' => 0 ); }
+		if ( self::override( $post->ID, 'nofollow' ) ) { $c['nofollow'] = true; }
+	}
+
 	public static function canonical_for_post( $post ) {
+		$post = get_post( $post );
+		$ov = $post ? self::override( $post->ID, 'canonical' ) : '';
+		if ( '' !== $ov ) { return $ov; }
 		$url = get_permalink( $post );
 		$page = (int) get_query_var( 'page' );
 		if ( $page > 1 ) { $url = trailingslashit( $url ) . user_trailingslashit( $page, 'single_paged' ); }
@@ -149,6 +171,7 @@ class Sidcraft_AutoSEO_Meta {
 			$robots['index'] = true;
 			unset( $robots['noindex'] );
 		}
+		if ( ! empty( $c['nofollow'] ) ) { $robots['nofollow'] = true; unset( $robots['follow'] ); }
 		$robots['max-image-preview'] = 'large';
 		$robots['max-snippet']       = '-1';
 		$robots['max-video-preview'] = '-1';
@@ -165,8 +188,9 @@ class Sidcraft_AutoSEO_Meta {
 		if ( Sidcraft_AutoSEO_Settings::on( 'social_cards' ) ) {
 			$out[] = '<meta property="og:locale" content="' . esc_attr( get_locale() ) . '" />';
 			$out[] = '<meta property="og:type" content="' . esc_attr( $c['type'] ) . '" />';
-			$out[] = '<meta property="og:title" content="' . esc_attr( $c['title'] ) . '" />';
-			if ( $c['desc'] ) { $out[] = '<meta property="og:description" content="' . esc_attr( $c['desc'] ) . '" />'; }
+			$st = ! empty( $c['og_title'] ) ? $c['og_title'] : $c['title']; $sd = ! empty( $c['og_desc'] ) ? $c['og_desc'] : $c['desc'];
+			$out[] = '<meta property="og:title" content="' . esc_attr( $st ) . '" />';
+			if ( $sd ) { $out[] = '<meta property="og:description" content="' . esc_attr( $sd ) . '" />'; }
 			$out[] = '<meta property="og:url" content="' . esc_url( $c['url'] ) . '" />';
 			$out[] = '<meta property="og:site_name" content="' . esc_attr( self::site_name() ) . '" />';
 			$card  = 'summary';
@@ -183,8 +207,8 @@ class Sidcraft_AutoSEO_Meta {
 				$out[] = '<meta property="article:modified_time" content="' . esc_attr( get_the_modified_date( 'c', $c['post'] ) ) . '" />';
 			}
 			$out[] = '<meta name="twitter:card" content="' . esc_attr( $card ) . '" />';
-			$out[] = '<meta name="twitter:title" content="' . esc_attr( $c['title'] ) . '" />';
-			if ( $c['desc'] ) { $out[] = '<meta name="twitter:description" content="' . esc_attr( $c['desc'] ) . '" />'; }
+			$out[] = '<meta name="twitter:title" content="' . esc_attr( $st ) . '" />';
+			if ( $sd ) { $out[] = '<meta name="twitter:description" content="' . esc_attr( $sd ) . '" />'; }
 			if ( ! empty( $c['image']['url'] ) ) { $out[] = '<meta name="twitter:image" content="' . esc_url( $c['image']['url'] ) . '" />'; }
 			$tw = ltrim( (string) Sidcraft_AutoSEO_Settings::get( 'twitter_site' ), '@' );
 			if ( $tw ) { $out[] = '<meta name="twitter:site" content="@' . esc_attr( $tw ) . '" />'; }
