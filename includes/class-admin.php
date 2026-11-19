@@ -16,11 +16,17 @@ class Sidcraft_AutoSEO_Admin {
 			add_action( "manage_{$pt}_posts_custom_column", array( __CLASS__, 'col_cell' ), 10, 2 );
 		}
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'styles' ) );
+		add_action( 'wp_ajax_sidcraft_autoseo_ip', array( __CLASS__, 'ajax_ip' ) );
 	}
 
 	public static function styles() {
 		$css = '.sidcraft-autoseo-b{display:inline-block;min-width:34px;text-align:center;padding:2px 8px;border-radius:12px;color:#fff;font-weight:600}.sidcraft-autoseo-g{background:#1a7f37}.sidcraft-autoseo-o{background:#d97706}.sidcraft-autoseo-r{background:#cf222e}.sidcraft-autoseo-card{background:#fff;border:1px solid #ccd0d4;border-radius:8px;padding:16px 20px;margin:0 12px 12px 0;display:inline-block;vertical-align:top;min-width:180px}.sidcraft-autoseo-card b{font-size:28px;display:block}a.sidcraft-autoseo-card{text-decoration:none;color:inherit}a.sidcraft-autoseo-card:hover{border-color:#2271b1;box-shadow:0 1px 6px rgba(0,0,0,.15)}.sidcraft-autoseo-card small{display:block;color:#2271b1;margin-top:4px}.sidcraft-autoseo-banner{background:#fff8e5;border:1px solid #dba617;border-radius:6px;padding:14px 18px;margin:14px 0;max-width:900px}.sidcraft-autoseo-wrap table.widefat td,.sidcraft-autoseo-wrap table.widefat th{vertical-align:top}'.
 			'.sidcraft-autoseo-tone-g{border-left:6px solid #1a7f37;background:#f0faf3}.sidcraft-autoseo-tone-g b{color:#1a7f37}.sidcraft-autoseo-tone-o{border-left:6px solid #d97706;background:#fff7ed}.sidcraft-autoseo-tone-o b{color:#c2410c}.sidcraft-autoseo-tone-r{border-left:6px solid #cf222e;background:#fff1f2}.sidcraft-autoseo-tone-r b{color:#cf222e}';
+		$pg = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only screen check.
+		if ( 0 === strpos( $pg, 'sidcraft-autoseo' ) || 0 === strpos( $pg, 'sidcraft-vs' ) ) {
+			wp_enqueue_script( 'sidcraft-autoseo-confirm', plugins_url( 'includes/assets/confirm.js', SIDCRAFT_AUTOSEO_FILE ), array(), SIDCRAFT_AUTOSEO_VERSION, true );
+			wp_localize_script( 'sidcraft-autoseo-confirm', 'sidcraftConfirmText', array( 'yes' => __( 'Yes, continue', 'sidcraft-autoseo' ), 'no' => __( 'Cancel', 'sidcraft-autoseo' ) ) );
+		}
 		wp_register_style( 'sidcraft-autoseo-admin', false, array(), SIDCRAFT_AUTOSEO_VERSION );
 		wp_enqueue_style( 'sidcraft-autoseo-admin' );
 		wp_add_inline_style( 'sidcraft-autoseo-admin', $css );
@@ -95,17 +101,17 @@ class Sidcraft_AutoSEO_Admin {
 	/** Tags the small action buttons need (used when their HTML is printed inside a table). */
 	private static function kses() {
 		return array(
-			'form' => array( 'method' => array(), 'action' => array(), 'style' => array(), 'onsubmit' => array() ),
+			'form' => array( 'method' => array(), 'action' => array(), 'style' => array(), 'data-sidcraft-confirm' => array() ),
 			'input' => array( 'type' => array(), 'name' => array(), 'value' => array() ),
-			'button' => array( 'class' => array(), 'type' => array(), 'name' => array(), 'value' => array() ),
-			'div' => array( 'style' => array() ), 'code' => array(), 'em' => array(), 'span' => array( 'class' => array() ),
+			'button' => array( 'class' => array(), 'type' => array(), 'name' => array(), 'value' => array(), 'data-do' => array(), 'data-ip' => array(), 'data-confirm' => array(), 'data-sidcraft-confirm' => array() ),
+			'div' => array( 'style' => array(), 'class' => array(), 'data-ip' => array() ), 'code' => array(), 'em' => array(), 'span' => array( 'class' => array() ),
 		);
 	}
 
 	private static function button_html( $do, $label, $extra = array(), $class = 'button', $confirm = '' ) { ob_start(); self::button( $do, $label, $extra, $class, $confirm ); return ob_get_clean(); }
 
 	private static function button( $do, $label, $extra = array(), $class = 'button', $confirm = '' ) {
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin:0 8px 8px 0"' . ( '' !== $confirm ? ' onsubmit="return confirm(' . esc_attr( wp_json_encode( $confirm ) ) . ');"' : '' ) . '>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin:0 8px 8px 0"' . ( '' !== $confirm ? ' data-sidcraft-confirm="' . esc_attr( $confirm ) . '"' : '' ) . '>';
 		wp_nonce_field( 'sidcraft_autoseo_action' );
 		echo '<input type="hidden" name="action" value="sidcraft_autoseo_action"><input type="hidden" name="do" value="' . esc_attr( $do ) . '">';
 		foreach ( $extra as $k => $v ) { echo '<input type="hidden" name="' . esc_attr( $k ) . '" value="' . esc_attr( $v ) . '">'; }
@@ -267,7 +273,7 @@ class Sidcraft_AutoSEO_Admin {
 			echo '<input type="url" class="regular-text" name="new_url" value="' . esc_attr( $it['suggest'] ) . '" placeholder="' . esc_attr__( 'New address', 'sidcraft-autoseo' ) . '" style="width:100%;max-width:340px"><br>';
 			echo '<button class="button button-primary" name="do" value="link_replace">' . esc_html__( 'Use this address', 'sidcraft-autoseo' ) . '</button> ';
 			if ( $it['internal'] ) { echo '<button class="button" name="do" value="link_redirect" title="' . esc_attr__( 'Keeps the link as it is and sends anyone who follows it to the new address', 'sidcraft-autoseo' ) . '">' . esc_html__( 'Redirect old address', 'sidcraft-autoseo' ) . '</button> '; }
-			echo '<button class="button" name="do" value="link_unlink" formnovalidate onclick="return confirm(' . esc_attr( wp_json_encode( __( 'Remove this link from the page? The words stay.', 'sidcraft-autoseo' ) ) ) . ');">' . esc_html__( 'Remove link', 'sidcraft-autoseo' ) . '</button> ';
+			echo '<button class="button" name="do" value="link_unlink" formnovalidate data-sidcraft-confirm="' . esc_attr__( 'Remove this link from the page? The words stay.', 'sidcraft-autoseo' ) . '">' . esc_html__( 'Remove link', 'sidcraft-autoseo' ) . '</button> ';
 			echo '<button class="button-link" name="do" value="link_ignore" formnovalidate>' . esc_html__( 'Ignore', 'sidcraft-autoseo' ) . '</button>';
 			echo '</form></td></tr>';
 		}
@@ -312,8 +318,10 @@ class Sidcraft_AutoSEO_Admin {
 			echo '<button class="button button-primary" name="do" value="url_redirect">' . esc_html__( 'Redirect (301)', 'sidcraft-autoseo' ) . '</button> ';
 			echo '<button class="button-link" name="do" value="url_dismiss" formnovalidate>' . esc_html__( 'Dismiss', 'sidcraft-autoseo' ) . '</button>';
 			echo '</form></td></tr>';
-		}
+			self::ip_script();
+	}
 		echo '</tbody></table>';
+		self::ip_script();
 	}
 
 	/** Names that real search-engine crawlers resolve to (reverse DNS), by company. */
@@ -340,22 +348,74 @@ class Sidcraft_AutoSEO_Admin {
 		return array( '', $host );
 	}
 
-	/** The addresses that asked for a missing URL, each with Check, and Block or Unblock for Sidcraft Bot Shield. */
+	/** The addresses that asked for a missing URL, each with Check, and Block or Unblock for Sidcraft Bot Shield (they work in place, without reloading the page). */
 	private static function ip_cell( $r ) {
 		$ips = isset( $r->ips ) && '' !== $r->ips ? explode( ',', $r->ips ) : array();
 		if ( ! $ips ) { return '<span class="description">' . esc_html__( 'not recorded', 'sidcraft-autoseo' ) . '</span>'; }
-		$shield = class_exists( 'Sidcraft_BotShield_Settings' ); $out = '';
+		$out = '';
 		foreach ( $ips as $ip ) {
-			$out .= '<div style="white-space:nowrap"><code>' . esc_html( $ip ) . '</code> ' . self::button_html( 'url_check_ip', __( 'Check', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link' );
-			if ( $shield ) {
-				$blocked = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
-				$safe    = method_exists( 'Sidcraft_BotShield_Settings', 'is_allowed_ip' ) && Sidcraft_BotShield_Settings::is_allowed_ip( $ip );
-				if ( $safe && ! $blocked ) { $out .= ' <em>' . esc_html__( 'never blocked', 'sidcraft-autoseo' ) . '</em></div>'; continue; }
-				$out .= $blocked ? ' <em>' . esc_html__( 'blocked', 'sidcraft-autoseo' ) . '</em> ' . self::button_html( 'url_unblock_ip', __( 'Unblock', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link' ) : ' ' . self::button_html( 'url_block_ip', __( 'Block', 'sidcraft-autoseo' ), array( 'ip' => $ip ), 'button-link', __( 'Block this address for good in Sidcraft Bot Shield?', 'sidcraft-autoseo' ) );
-			}
-			$out .= '</div>';
+			$ip = trim( $ip );
+			$out .= '<div class="sidcraft-ip-row" data-ip="' . esc_attr( $ip ) . '" style="white-space:nowrap"><code>' . esc_html( $ip ) . '</code> <span class="sidcraft-ip-ctl">' . self::ip_controls( $ip ) . '</span><div class="sidcraft-ip-msg" style="white-space:normal"></div></div>';
 		}
 		return $out;
+	}
+
+	/** The small script behind the Check / Block / Unblock buttons: sends the click, then shows the answer next to the address. */
+	private static function ip_script() {
+		wp_register_script( 'sidcraft-autoseo-ip', false, array(), SIDCRAFT_AUTOSEO_VERSION, true );
+		wp_enqueue_script( 'sidcraft-autoseo-ip' );
+		wp_localize_script( 'sidcraft-autoseo-ip', 'sidcraftAutoSEOIp', array( 'ajax' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'sidcraft_autoseo_ip' ), 'working' => __( 'Working…', 'sidcraft-autoseo' ), 'failed' => __( 'The request failed. Reload the page and try again.', 'sidcraft-autoseo' ) ) );
+		wp_add_inline_script( 'sidcraft-autoseo-ip', "document.addEventListener('click',function(e){var b=e.target.closest('.sidcraft-ip-act');if(!b){return;}e.preventDefault();var c=window.sidcraftAutoSEOIp,ip=b.getAttribute('data-ip'),q=b.getAttribute('data-confirm');function run(){var rows=document.querySelectorAll('.sidcraft-ip-row');rows=Array.prototype.filter.call(rows,function(r){return r.getAttribute('data-ip')===ip;});rows.forEach(function(r){r.querySelector('.sidcraft-ip-msg').textContent=c.working;});var f=new URLSearchParams({action:'sidcraft_autoseo_ip',nonce:c.nonce,do:b.getAttribute('data-do'),ip:ip});fetch(c.ajax,{method:'POST',credentials:'same-origin',body:f}).then(function(r){return r.json();}).then(function(j){var d=j&&j.data?j.data:{};rows.forEach(function(r){var m=r.querySelector('.sidcraft-ip-msg');m.textContent=d.msg||c.failed;m.style.cssText='white-space:normal;margin:4px 0;padding:6px 8px;border-left:4px solid '+(j&&j.success?'#00a32a':'#d63638')+';background:#fff;max-width:420px';if(d.html){r.querySelector('.sidcraft-ip-ctl').innerHTML=d.html;}});}).catch(function(){rows.forEach(function(r){r.querySelector('.sidcraft-ip-msg').textContent=c.failed;});});}if(q&&window.sidcraftConfirm){window.sidcraftConfirm(q,run);}else{run();}});" );
+	}
+
+	/** Check, block or unblock one address. Returns the message to show. Shared by the form buttons and the in-page (AJAX) buttons. */
+	private static function ip_action( $do, $ip ) {
+		if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) { return __( 'That is not a valid address.', 'sidcraft-autoseo' ); }
+		list( $engine, $host ) = self::search_engine( $ip );
+		if ( 'url_check_ip' === $do ) {
+			if ( $engine ) { /* translators: 1: IP address 2: company 3: host name */ return sprintf( __( '%1$s is a genuine %2$s crawler (%3$s). Do not block it: blocking it would remove your pages from search results.', 'sidcraft-autoseo' ), $ip, $engine, $host ); }
+			if ( $host ) { /* translators: 1: IP address 2: host name */ return sprintf( __( '%1$s is NOT a verified search engine. Its host name is %2$s.', 'sidcraft-autoseo' ), $ip, $host ); }
+			/* translators: %s: IP address */
+			return sprintf( __( '%s has no host name, so it is not a search engine crawler. Search engines can always be traced back to their own servers.', 'sidcraft-autoseo' ), $ip );
+		}
+		if ( ! class_exists( 'Sidcraft_BotShield_Settings' ) ) { return __( 'Install and activate Sidcraft Bot Shield to block or unblock addresses.', 'sidcraft-autoseo' ); }
+		if ( 'url_unblock_ip' === $do ) {
+			Sidcraft_BotShield_Settings::remove_line( 'ip_block', $ip );
+			if ( class_exists( 'Sidcraft_BotShield_Bans' ) ) { Sidcraft_BotShield_Bans::remove( $ip ); }
+			$still = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
+			/* translators: %s: IP address */
+			return $still ? sprintf( __( '%s was removed from the list by itself, but a range on the Sidcraft Bot Shield block list still covers it. Edit that range in Settings → Bot Shield.', 'sidcraft-autoseo' ), $ip ) : sprintf( __( '%s is unblocked.', 'sidcraft-autoseo' ), $ip );
+		}
+		if ( method_exists( 'Sidcraft_BotShield_Settings', 'is_allowed_ip' ) && Sidcraft_BotShield_Settings::is_allowed_ip( $ip ) ) { /* translators: %s: IP address */ return sprintf( __( '%s is on the Sidcraft Bot Shield never-block list, so it was not blocked. Remove it from that list first if you really want to block it.', 'sidcraft-autoseo' ), $ip ); }
+		if ( $engine ) { /* translators: 1: IP address 2: company */ return sprintf( __( '%1$s is a genuine %2$s crawler, so it was not blocked. Blocking it would remove your pages from search results.', 'sidcraft-autoseo' ), $ip, $engine ); }
+		if ( false === Sidcraft_BotShield_Settings::add_line( 'ip_block', $ip ) ) { /* translators: %s: IP address */ return sprintf( __( '%s could not be added to the block list.', 'sidcraft-autoseo' ), $ip ); }
+		$ok = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
+		/* translators: %s: IP address */
+		return $ok ? sprintf( __( '%s is now on the Sidcraft Bot Shield block list. You can unblock it here at any time.', 'sidcraft-autoseo' ), $ip ) : sprintf( __( '%s was saved but Sidcraft Bot Shield does not report it as blocked. Check Settings → Bot Shield.', 'sidcraft-autoseo' ), $ip );
+	}
+
+	/** In-page Check / Block / Unblock: answers without reloading the page, so the result appears next to the button. */
+	public static function ajax_ip() {
+		check_ajax_referer( 'sidcraft_autoseo_ip', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( array( 'msg' => __( 'You do not have permission to do this.', 'sidcraft-autoseo' ) ), 403 ); }
+		$do = isset( $_POST['do'] ) ? sanitize_key( wp_unslash( $_POST['do'] ) ) : '';
+		$ip = isset( $_POST['ip'] ) ? sanitize_text_field( wp_unslash( $_POST['ip'] ) ) : '';
+		if ( ! in_array( $do, array( 'url_check_ip', 'url_block_ip', 'url_unblock_ip' ), true ) ) { wp_send_json_error( array( 'msg' => __( 'Unknown action.', 'sidcraft-autoseo' ) ), 400 ); }
+		$msg = self::ip_action( $do, $ip );
+		wp_send_json_success( array( 'msg' => $msg, 'html' => wp_kses( self::ip_controls( $ip ), self::kses_ip() ) ) );
+	}
+
+	private static function kses_ip() { return array( 'em' => array(), 'button' => array( 'type' => array(), 'class' => array(), 'data-do' => array(), 'data-ip' => array(), 'data-confirm' => array() ), 'span' => array( 'class' => array() ) ); }
+
+	/** Check, and Block or Unblock, for one address (the part of the cell that changes). */
+	private static function ip_controls( $ip ) {
+		$out = '<button type="button" class="button-link sidcraft-ip-act" data-do="url_check_ip" data-ip="' . esc_attr( $ip ) . '">' . esc_html__( 'Check', 'sidcraft-autoseo' ) . '</button>';
+		if ( ! class_exists( 'Sidcraft_BotShield_Settings' ) ) { return $out; }
+		$blocked = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
+		$safe    = method_exists( 'Sidcraft_BotShield_Settings', 'is_allowed_ip' ) && Sidcraft_BotShield_Settings::is_allowed_ip( $ip );
+		if ( $safe && ! $blocked ) { return $out . ' <em>' . esc_html__( 'never blocked', 'sidcraft-autoseo' ) . '</em>'; }
+		if ( $blocked ) { return $out . ' <em>' . esc_html__( 'blocked', 'sidcraft-autoseo' ) . '</em> <button type="button" class="button-link sidcraft-ip-act" data-do="url_unblock_ip" data-ip="' . esc_attr( $ip ) . '">' . esc_html__( 'Unblock', 'sidcraft-autoseo' ) . '</button>'; }
+		return $out . ' <button type="button" class="button-link sidcraft-ip-act" data-do="url_block_ip" data-ip="' . esc_attr( $ip ) . '" data-confirm="' . esc_attr__( 'Block this address for good in Sidcraft Bot Shield?', 'sidcraft-autoseo' ) . '">' . esc_html__( 'Block', 'sidcraft-autoseo' ) . '</button>';
 	}
 
 	/** Groups of broken addresses that share a first folder (like /itm/) and the folders already answered with 410 Gone. */
@@ -559,29 +619,7 @@ class Sidcraft_AutoSEO_Admin {
 			case 'url_block_ip':
 			case 'url_unblock_ip':
 				$tab = 'urls';
-				$ip  = isset( $_POST['ip'] ) ? sanitize_text_field( wp_unslash( $_POST['ip'] ) ) : '';
-				if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) { $msg = __( 'That is not a valid address.', 'sidcraft-autoseo' ); break; }
-				list( $engine, $host ) = self::search_engine( $ip );
-				if ( 'url_check_ip' === $do ) {
-					if ( $engine ) { /* translators: 1: IP address 2: company 3: host name */ $msg = sprintf( __( '%1$s is a genuine %2$s crawler (%3$s). Do not block it: blocking it would remove your pages from search results.', 'sidcraft-autoseo' ), $ip, $engine, $host ); }
-					elseif ( $host ) { /* translators: 1: IP address 2: host name */ $msg = sprintf( __( '%1$s is NOT a verified search engine. Its host name is %2$s.', 'sidcraft-autoseo' ), $ip, $host ); }
-					else { /* translators: %s: IP address */ $msg = sprintf( __( '%s has no host name, so it is not a search engine crawler. Search engines can always be traced back to their own servers.', 'sidcraft-autoseo' ), $ip ); }
-					break;
-				}
-				if ( ! class_exists( 'Sidcraft_BotShield_Settings' ) ) { $msg = __( 'Install and activate Sidcraft Bot Shield to block or unblock addresses.', 'sidcraft-autoseo' ); break; }
-				if ( 'url_unblock_ip' === $do ) {
-					Sidcraft_BotShield_Settings::remove_line( 'ip_block', $ip );
-					if ( class_exists( 'Sidcraft_BotShield_Bans' ) ) { Sidcraft_BotShield_Bans::remove( $ip ); }
-					$still = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
-					/* translators: %s: IP address */
-					$msg = $still ? sprintf( __( '%s was removed from the list by itself, but a range on the Sidcraft Bot Shield block list still covers it. Edit that range in Settings → Bot Shield.', 'sidcraft-autoseo' ), $ip ) : sprintf( __( '%s is unblocked.', 'sidcraft-autoseo' ), $ip );
-					break;
-				}
-				if ( method_exists( 'Sidcraft_BotShield_Settings', 'is_allowed_ip' ) && Sidcraft_BotShield_Settings::is_allowed_ip( $ip ) ) { /* translators: %s: IP address */ $msg = sprintf( __( '%s is on the Sidcraft Bot Shield never-block list, so it was not blocked. Remove it from that list first if you really want to block it.', 'sidcraft-autoseo' ), $ip ); break; }
-				if ( $engine ) { /* translators: 1: IP address 2: company */ $msg = sprintf( __( '%1$s is a genuine %2$s crawler, so it was not blocked. Blocking it would remove your pages from search results.', 'sidcraft-autoseo' ), $ip, $engine ); break; }
-				Sidcraft_BotShield_Settings::add_line( 'ip_block', $ip );
-				/* translators: %s: IP address */
-				$msg = sprintf( __( '%s is now on the Sidcraft Bot Shield block list. You can unblock it here at any time.', 'sidcraft-autoseo' ), $ip );
+				$msg = self::ip_action( $do, isset( $_POST['ip'] ) ? sanitize_text_field( wp_unslash( $_POST['ip'] ) ) : '' );
 				break;
 			case 'url_redirect':
 			case 'url_dismiss':

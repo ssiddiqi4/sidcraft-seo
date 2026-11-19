@@ -16,7 +16,7 @@ class Sidcraft_AutoSEO_Speed_Admin {
 	}
 
 	private static function btn( $do, $label, $class = 'button', $confirm = '' ) {
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin:0 8px 8px 0"' . ( '' !== $confirm ? ' onsubmit="return confirm(' . esc_attr( wp_json_encode( $confirm ) ) . ')"' : '' ) . '>'; wp_nonce_field( 'sidcraft_autoseo_speed' );
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin:0 8px 8px 0"' . ( '' !== $confirm ? ' data-sidcraft-confirm="' . esc_attr( $confirm ) . '"' : '' ) . '>'; wp_nonce_field( 'sidcraft_autoseo_speed' );
 		echo '<input type="hidden" name="action" value="sidcraft_autoseo_speed"><input type="hidden" name="do" value="' . esc_attr( $do ) . '"><button class="' . esc_attr( $class ) . '">' . esc_html( $label ) . '</button></form>';
 	}
 
@@ -100,7 +100,7 @@ class Sidcraft_AutoSEO_Speed_Admin {
 		foreach ( $items as $k => $it ) {
 			echo '<tr><td><input type="checkbox" name="keys[]" value="' . esc_attr( $k ) . '"' . ( $c[ $k ] > 0 ? ' checked' : ' disabled' ) . '></td><td><strong>' . esc_html( $it[0] ) . '</strong><br><span class="description">' . esc_html( $it[1] ) . '</span></td><td>' . (int) $c[ $k ] . '</td></tr>';
 		}
-		echo '</tbody></table><p><button class="button button-primary" onclick="return confirm(' . esc_attr( wp_json_encode( __( 'Delete the ticked items permanently?', 'sidcraft-autoseo' ) ) ) . ')">' . esc_html__( 'Clean selected', 'sidcraft-autoseo' ) . '</button></p></form>';
+		echo '</tbody></table><p><button class="button button-primary" data-sidcraft-confirm="' . esc_attr__( 'Delete the ticked items permanently?', 'sidcraft-autoseo' ) . '">' . esc_html__( 'Clean selected', 'sidcraft-autoseo' ) . '</button></p></form>';
 		echo '<h2>' . esc_html__( 'Tables', 'sidcraft-autoseo' ) . '</h2>';
 		if ( Sidcraft_AutoSEO_DbClean::is_mysql() ) {
 			$t = Sidcraft_AutoSEO_DbClean::tables(); $tot = 0; $free = 0;

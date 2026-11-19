@@ -34,6 +34,12 @@ function sidcraft_autoseo_uninstall() {
 		}
 		foreach ( array( 'sidcraft_autoseo_speed', 'sidcraft_autoseo_slow', 'sidcraft_autoseo_min_bad' ) as $option_name ) { delete_option( $option_name ); }
 	}
+	$vs = get_option( 'sidcraft_vs_settings' );
+	if ( is_array( $vs ) && ! empty( $vs['delete_on_uninstall'] ) ) {
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'svs_hits' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange -- removing our own table.
+		foreach ( array( 'sidcraft_vs_settings', 'sidcraft_vs_db', 'sidcraft_vs_salt' ) as $option_name ) { delete_option( $option_name ); }
+	}
+	wp_clear_scheduled_hook( 'sidcraft_vs_purge' );
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_db_auto' );
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_cache_clear' );
 	wp_clear_scheduled_hook( 'sidcraft_autoseo_preload', array( 0 ) );

@@ -1,0 +1,37 @@
+.sidcraft-vs .svs-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:14px 0}
+.sidcraft-vs .svs-presets{display:flex;flex-wrap:wrap;gap:6px}
+.sidcraft-vs .svs-custom{display:flex;gap:6px;align-items:center}
+.sidcraft-vs .svs-export{margin-left:auto!important}
+.sidcraft-vs .svs-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.sidcraft-vs .svs-card,.sidcraft-vs .svs-panel{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.sidcraft-vs .svs-card-l{color:#646970;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.sidcraft-vs .svs-card-v{font-size:28px;font-weight:600;line-height:1.2;margin:4px 0;color:#1d2327}
+.sidcraft-vs .svs-card-d{font-size:12px;color:#646970}
+.sidcraft-vs .svs-up{color:#00a32a;font-weight:600}.sidcraft-vs .svs-down{color:#d63638;font-weight:600}
+.sidcraft-vs .svs-live .svs-card-l{color:#00a32a}
+.sidcraft-vs .svs-chart{margin-bottom:14px}
+.sidcraft-vs .svs-svg{width:100%;height:auto;display:block}
+.sidcraft-vs .svs-grid{stroke:#e5e5e8;stroke-width:1}
+.sidcraft-vs .svs-axis{fill:#787c82;font-size:11px}
+.sidcraft-vs .svs-line{stroke-width:2.2;stroke-linejoin:round}.sidcraft-vs .svs-line.svs-c1{stroke:#2271b1}.sidcraft-vs .svs-line.svs-c2{stroke:#00a32a}
+.sidcraft-vs .svs-area.svs-c1{fill:rgba(34,113,177,.13)}.sidcraft-vs .svs-area.svs-c2{fill:rgba(0,163,42,.10)}
+.sidcraft-vs .svs-dot{fill:#2271b1}
+.sidcraft-vs .svs-hit:hover{fill:rgba(34,113,177,.08)}
+.sidcraft-vs .svs-legend{display:flex;gap:18px;font-size:12px;color:#50575e;margin-bottom:4px}
+.sidcraft-vs .svs-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.sidcraft-vs .svs-legend i.svs-c1{background:#2271b1}.sidcraft-vs .svs-legend i.svs-c2{background:#00a32a}
+.sidcraft-vs .svs-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.sidcraft-vs .svs-panel h3{margin:0 0 10px;font-size:14px}
+.sidcraft-vs .svs-row{position:relative;display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:4px;overflow:hidden}
+.sidcraft-vs .svs-row .svs-fill{position:absolute;left:0;top:0;bottom:0;background:rgba(34,113,177,.10);z-index:0}
+.sidcraft-vs .svs-row>*:not(.svs-fill){position:relative;z-index:1}
+.sidcraft-vs .svs-head{font-size:11px;text-transform:uppercase;color:#787c82;padding-top:0}
+.sidcraft-vs .svs-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidcraft-vs .svs-name small{display:block;color:#787c82;font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.sidcraft-vs .svs-num{width:62px;text-align:right;font-variant-numeric:tabular-nums}
+.sidcraft-vs .svs-empty{color:#787c82;margin:0}
+.sidcraft-vs .svs-hours{display:flex;align-items:flex-end;gap:3px;height:130px}
+.sidcraft-vs .svs-hcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;align-items:center;font-size:10px;color:#787c82}
+.sidcraft-vs .svs-hcol i{display:block;width:100%;background:#2271b1;border-radius:2px 2px 0 0;opacity:.85}
+.sidcraft-vs .svs-check{display:inline-block;margin:0 14px 4px 0}
+@media(max-width:600px){.sidcraft-vs .svs-grid2{grid-template-columns:1fr}.sidcraft-vs .svs-export{margin-left:0!important}}

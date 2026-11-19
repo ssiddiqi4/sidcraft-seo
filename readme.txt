@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.3
+Stable tag: 1.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,10 @@ Hands-off SEO for pages and posts: automatic titles, descriptions, social cards,
 = Speed & Database (optional) =
 
 A page cache, HTML/CSS/JavaScript minify, database clean-up (revisions, spam, expired transients, orphaned data) and performance debugging (health checks, speed test, slow-page log, error-log reader). Every option is off until you switch it on. The cache is stored as files in the uploads folder and needs no change to wp-config.php or the server; use only one caching plugin at a time.
+
+= Visitor Stats (built in) =
+
+Private, cookie-free visitor statistics in your dashboard (Sidcraft AutoSEO > Visitor Stats): visitors, page views, pages per visit, bounce rate, time on page, live visitors, top pages, traffic sources, referring sites, campaigns, countries (with Cloudflare), browsers, systems, devices and broken-link (404) hits. No cookies, no stored IP addresses, nothing sent to another service, and it works with page caches. Exclude roles and your own IP addresses (with an "Add My IP Address" button), respect Do Not Track, export CSV, automatic clean-up of old data.
 
 = Self-repairing =
 
@@ -140,6 +144,15 @@ No. See "External services" for the one optional request the plugin makes (Index
 8. Settings: every automatic feature has an on/off switch.
 
 == Changelog ==
+
+= 1.9.2 =
+* Fixed: buttons that ask "Are you sure?" (Block, Dismiss all, Remove link, clean-up and delete buttons) stopped working silently once the browser's "Don't allow this page to prompt you again" box was ticked. They now use the plugin's own confirmation box, which the browser cannot switch off.
+
+= 1.9.1 =
+* Fixed: Check, Block and Unblock on the Broken URLs tab now work in place and show their answer right next to the address (before, the page reloaded and the message appeared far above the list, so it looked as if nothing had happened). They also tell you when Sidcraft Bot Shield did not accept the address.
+
+= 1.9.0 =
+* New: Visitor Stats, a private cookie-free analytics module (the former Sidcraft Visitor Stats plugin, now built in). Statistics dashboard, settings with Add My IP Address, dashboard widget, CSV export, daily clean-up of old data. If you installed the separate plugin, deactivate and delete it first; its data is kept and picked up automatically.
 
 = 1.8.3 =
 * Plugin Check: removed suppress_filters from the audit scope query.
