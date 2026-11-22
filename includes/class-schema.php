@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** JSON-LD structured data: Organization, WebSite, WebPage/Article, BreadcrumbList and FAQPage (found automatically). */
-class Sidcraft_AutoSEO_Schema {
+class Sidcraft_RankBoost_Schema {
 
 	public static function init() {
 		add_action( 'wp_head', array( __CLASS__, 'output' ), 30 );
@@ -19,9 +19,9 @@ class Sidcraft_AutoSEO_Schema {
 	}
 
 	public static function graph() {
-		if ( ! Sidcraft_AutoSEO_Settings::on( 'schema' ) ) { return array(); }
+		if ( ! Sidcraft_RankBoost_Settings::on( 'schema' ) ) { return array(); }
 		$home = home_url( '/' );
-		$org  = array( '@type' => 'Organization', '@id' => $home . '#organization', 'name' => Sidcraft_AutoSEO_Meta::site_name(), 'url' => $home );
+		$org  = array( '@type' => 'Organization', '@id' => $home . '#organization', 'name' => Sidcraft_RankBoost_Meta::site_name(), 'url' => $home );
 		$logo = self::logo();
 		if ( $logo ) { $org['logo'] = $logo; }
 		$graph = array(
@@ -30,14 +30,14 @@ class Sidcraft_AutoSEO_Schema {
 				'@type'           => 'WebSite',
 				'@id'             => $home . '#website',
 				'url'             => $home,
-				'name'            => Sidcraft_AutoSEO_Meta::site_name(),
+				'name'            => Sidcraft_RankBoost_Meta::site_name(),
 				'description'     => wp_strip_all_tags( get_bloginfo( 'description' ) ),
 				'publisher'       => array( '@id' => $home . '#organization' ),
 				'inLanguage'      => get_bloginfo( 'language' ),
 				'potentialAction' => array( '@type' => 'SearchAction', 'target' => array( '@type' => 'EntryPoint', 'urlTemplate' => $home . '?s={search_term_string}' ), 'query-input' => 'required name=search_term_string' ),
 			),
 		);
-		$c = Sidcraft_AutoSEO_Meta::current();
+		$c = Sidcraft_RankBoost_Meta::current();
 		if ( is_singular() && $c['post'] ) {
 			$post = $c['post'];
 			$url  = $c['url'];
@@ -65,10 +65,10 @@ class Sidcraft_AutoSEO_Schema {
 					'@id'              => $url . '#article',
 					'isPartOf'         => array( '@id' => $url . '#webpage' ),
 					'mainEntityOfPage' => array( '@id' => $url . '#webpage' ),
-					'headline'         => Sidcraft_AutoSEO_Util::truncate( get_the_title( $post ), 110 ),
+					'headline'         => Sidcraft_RankBoost_Util::truncate( get_the_title( $post ), 110 ),
 					'datePublished'    => get_the_date( 'c', $post ),
 					'dateModified'     => get_the_modified_date( 'c', $post ),
-					'wordCount'        => Sidcraft_AutoSEO_Util::word_count( Sidcraft_AutoSEO_Util::post_text( $post ) ),
+					'wordCount'        => Sidcraft_RankBoost_Util::word_count( Sidcraft_RankBoost_Util::post_text( $post ) ),
 					'publisher'        => array( '@id' => $home . '#organization' ),
 					'inLanguage'       => get_bloginfo( 'language' ),
 				);
@@ -87,11 +87,11 @@ class Sidcraft_AutoSEO_Schema {
 		} elseif ( is_category() || is_tag() || is_tax() ) {
 			$graph[] = array( '@type' => 'CollectionPage', '@id' => $c['url'] . '#webpage', 'url' => $c['url'], 'name' => wp_strip_all_tags( $c['title'] ), 'isPartOf' => array( '@id' => $home . '#website' ) );
 		}
-		return apply_filters( 'sidcraft_autoseo_schema_graph', $graph, $c );
+		return apply_filters( 'sidcraft_rankboost_schema_graph', $graph, $c );
 	}
 
 	private static function breadcrumbs( $post, $url ) {
-		$items = array( array( 'name' => __( 'Home', 'sidcraft-autoseo' ), 'url' => home_url( '/' ) ) );
+		$items = array( array( 'name' => __( 'Home', 'sidcraft-rankboost' ), 'url' => home_url( '/' ) ) );
 		$anc   = array_reverse( get_post_ancestors( $post ) );
 		foreach ( $anc as $id ) { $items[] = array( 'name' => get_the_title( $id ), 'url' => get_permalink( $id ) ); }
 		if ( 'post' === $post->post_type ) {
@@ -112,10 +112,10 @@ class Sidcraft_AutoSEO_Schema {
 		if ( ! preg_match_all( '#<h([2-6])[^>]*>([^<]{8,200}\?)\s*</h\1>\s*(<p[^>]*>.*?</p>)#is', $content, $m, PREG_SET_ORDER ) || count( $m ) < 2 ) { return null; }
 		$qa = array();
 		foreach ( $m as $row ) {
-			$q = Sidcraft_AutoSEO_Util::clean( wp_strip_all_tags( $row[2] ) );
-			$a = Sidcraft_AutoSEO_Util::clean( wp_strip_all_tags( $row[3] ) );
-			if ( Sidcraft_AutoSEO_Util::len( $a ) < 20 ) { continue; }
-			$qa[] = array( '@type' => 'Question', 'name' => $q, 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => Sidcraft_AutoSEO_Util::truncate( $a, 600 ) ) );
+			$q = Sidcraft_RankBoost_Util::clean( wp_strip_all_tags( $row[2] ) );
+			$a = Sidcraft_RankBoost_Util::clean( wp_strip_all_tags( $row[3] ) );
+			if ( Sidcraft_RankBoost_Util::len( $a ) < 20 ) { continue; }
+			$qa[] = array( '@type' => 'Question', 'name' => $q, 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => Sidcraft_RankBoost_Util::truncate( $a, 600 ) ) );
 		}
 		return count( $qa ) >= 2 ? array( '@type' => 'FAQPage', 'mainEntity' => $qa ) : null;
 	}
@@ -126,6 +126,6 @@ class Sidcraft_AutoSEO_Schema {
 		if ( ! $graph ) { return; }
 		$json = wp_json_encode( array( '@context' => 'https://schema.org', '@graph' => $graph ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP );
 		if ( false === $json ) { return; }
-		wp_print_inline_script_tag( $json, array( 'type' => 'application/ld+json', 'class' => 'sidcraft-autoseo-schema' ) );
+		wp_print_inline_script_tag( $json, array( 'type' => 'application/ld+json', 'class' => 'sidcraft-rankboost-schema' ) );
 	}
 }

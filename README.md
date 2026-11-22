@@ -1,4 +1,4 @@
-# Sidcraft AutoSEO
+# Sidcraft RankBoost
 
 Hands-off SEO for WordPress pages and posts: automatic titles, descriptions, social cards, structured data, sitemap tweaks, redirects, image alt text, a daily audit with one-click fixes, a Broken Links tab, a Broken URLs tab and rule-based suggestions. No AI service is used.
 
@@ -8,15 +8,15 @@ Hands-off SEO for WordPress pages and posts: automatic titles, descriptions, soc
 
 ## Install from source
 
-Copy this folder into `wp-content/plugins/sidcraft-autoseo/` (the folder name must be `sidcraft-autoseo`) and activate it.
+Copy this folder into `wp-content/plugins/sidcraft-rankboost/` (the folder name must be `sidcraft-rankboost`) and activate it.
 
 ## Release ZIP
 
 ```bash
 cd ..
-mkdir -p build && cp -r sidcraft-seo build/sidcraft-autoseo
-rm -rf build/sidcraft-autoseo/.git build/sidcraft-autoseo/README.md build/sidcraft-autoseo/.distignore
-(cd build && zip -r sidcraft-autoseo.zip sidcraft-autoseo)
+mkdir -p build && cp -r sidcraft-rankboost build/sidcraft-rankboost
+rm -rf build/sidcraft-rankboost/.git build/sidcraft-rankboost/README.md build/sidcraft-rankboost/.distignore
+(cd build && zip -r sidcraft-rankboost.zip sidcraft-rankboost)
 ```
 
 Support the project: https://paypal.me/SSiddiqi275

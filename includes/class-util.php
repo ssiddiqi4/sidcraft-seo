@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** Small helpers shared by every module. */
-class Sidcraft_AutoSEO_Util {
+class Sidcraft_RankBoost_Util {
 
 
 	/* ---------- multibyte-safe string helpers (work even when mbstring is missing) ---------- */
@@ -33,7 +33,7 @@ class Sidcraft_AutoSEO_Util {
 	public static function post_types() {
 		$types = get_post_types( array( 'public' => true ), 'names' );
 		unset( $types['attachment'] );
-		return array_values( apply_filters( 'sidcraft_autoseo_post_types', $types ) );
+		return array_values( apply_filters( 'sidcraft_rankboost_post_types', $types ) );
 	}
 
 	/** Remove tags but keep a space where block elements and line breaks were, so words do not run together. */
@@ -198,7 +198,7 @@ class Sidcraft_AutoSEO_Util {
 			$imgs = self::post_images( $post );
 			if ( $imgs ) { return array( 'url' => $imgs[0], 'w' => 0, 'h' => 0 ); }
 		}
-		$default = Sidcraft_AutoSEO_Settings::get( 'default_image' );
+		$default = Sidcraft_RankBoost_Settings::get( 'default_image' );
 		if ( $default ) { return array( 'url' => $default, 'w' => 0, 'h' => 0 ); }
 		$icon = get_site_icon_url( 512 );
 		return $icon ? array( 'url' => $icon, 'w' => 512, 'h' => 512 ) : array();

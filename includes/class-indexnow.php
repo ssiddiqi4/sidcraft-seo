@@ -2,22 +2,22 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** Tells Bing, Yandex and other IndexNow search engines about new and changed pages the moment you publish. */
-class Sidcraft_AutoSEO_IndexNow {
+class Sidcraft_RankBoost_IndexNow {
 
 	private static $queue = array();
 
 	public static function init() {
-		if ( ! Sidcraft_AutoSEO_Settings::on( 'indexnow' ) ) { return; }
+		if ( ! Sidcraft_RankBoost_Settings::on( 'indexnow' ) ) { return; }
 		add_action( 'template_redirect', array( __CLASS__, 'serve_key' ), 0 );
 		add_action( 'transition_post_status', array( __CLASS__, 'queue' ), 10, 3 );
 		add_action( 'shutdown', array( __CLASS__, 'send' ) );
 	}
 
 	public static function key() {
-		$key = get_option( 'sidcraft_autoseo_indexnow_key' );
+		$key = get_option( 'sidcraft_rankboost_indexnow_key' );
 		if ( ! is_string( $key ) || ! preg_match( '/^[a-f0-9]{32}$/', $key ) ) {
 			$key = bin2hex( random_bytes( 16 ) );
-			update_option( 'sidcraft_autoseo_indexnow_key', $key, false );
+			update_option( 'sidcraft_rankboost_indexnow_key', $key, false );
 		}
 		return $key;
 	}
@@ -39,11 +39,11 @@ class Sidcraft_AutoSEO_IndexNow {
 		if ( ! get_option( 'blog_public' ) || wp_get_environment_type() !== 'production' ) { return false; }
 		$host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
 		if ( '' === $host || 'localhost' === $host || filter_var( $host, FILTER_VALIDATE_IP ) || preg_match( '/\.(local|test|localhost|invalid|example)$/', $host ) ) { return false; }
-		return (bool) apply_filters( 'sidcraft_autoseo_indexnow_allowed', true );
+		return (bool) apply_filters( 'sidcraft_rankboost_indexnow_allowed', true );
 	}
 
 	public static function queue( $new, $old, $post ) {
-		if ( ! in_array( $post->post_type, Sidcraft_AutoSEO_Util::post_types(), true ) ) { return; }
+		if ( ! in_array( $post->post_type, Sidcraft_RankBoost_Util::post_types(), true ) ) { return; }
 		if ( 'publish' !== $new && 'publish' !== $old ) { return; }
 		if ( wp_is_post_revision( $post ) ) { return; }
 		$url = get_permalink( $post );
@@ -59,7 +59,7 @@ class Sidcraft_AutoSEO_IndexNow {
 			'headers' => array( 'Content-Type' => 'application/json; charset=utf-8' ),
 			'body'    => wp_json_encode( $body ),
 		) );
-		update_option( 'sidcraft_autoseo_indexnow_last', array( 'time' => time(), 'count' => count( $urls ) ), false );
+		update_option( 'sidcraft_rankboost_indexnow_last', array( 'time' => time(), 'count' => count( $urls ) ), false );
 		self::$queue = array();
 	}
 }

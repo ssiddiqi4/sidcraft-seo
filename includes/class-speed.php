@@ -2,9 +2,9 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** Settings and small helpers for the Speed features (page cache, minify, database clean-up, debugging). Everything here is opt-in. */
-class Sidcraft_AutoSEO_Speed {
+class Sidcraft_RankBoost_Speed {
 
-	const OPTION = 'sidcraft_autoseo_speed';
+	const OPTION = 'sidcraft_rankboost_speed';
 
 	public static function defaults() {
 		return array(
@@ -63,7 +63,7 @@ class Sidcraft_AutoSEO_Speed {
 			}
 		}
 		update_option( self::OPTION, $o, true );
-		Sidcraft_AutoSEO_Cache::clear_all(); Sidcraft_AutoSEO_Minify::clear(); self::reschedule();
+		Sidcraft_RankBoost_Cache::clear_all(); Sidcraft_RankBoost_Minify::clear(); self::reschedule();
 	}
 
 	/** Timestamp of 12:01 AM in the site's time zone, $days days after the day of $from (0 = the next 12:01 AM). */
@@ -77,7 +77,7 @@ class Sidcraft_AutoSEO_Speed {
 	/** (Re)plan the two maintenance jobs from the saved day counts. */
 	public static function reschedule() {
 		$o = self::all();
-		foreach ( array( Sidcraft_AutoSEO_DbClean::HOOK => (int) $o['db_days'], Sidcraft_AutoSEO_Cache::CLEAR_HOOK => (int) $o['cache_days'] ) as $hook => $days ) {
+		foreach ( array( Sidcraft_RankBoost_DbClean::HOOK => (int) $o['db_days'], Sidcraft_RankBoost_Cache::CLEAR_HOOK => (int) $o['cache_days'] ) as $hook => $days ) {
 			wp_clear_scheduled_hook( $hook );
 			if ( $days > 0 ) { wp_schedule_single_event( self::at_0001( 0 ), $hook ); }
 		}
@@ -92,15 +92,15 @@ class Sidcraft_AutoSEO_Speed {
 	/** Safety net: if a job is enabled but nothing is planned (for example after a restore), plan it. */
 	public static function heal() {
 		$o = self::all();
-		foreach ( array( Sidcraft_AutoSEO_DbClean::HOOK => (int) $o['db_days'], Sidcraft_AutoSEO_Cache::CLEAR_HOOK => (int) $o['cache_days'] ) as $hook => $days ) {
+		foreach ( array( Sidcraft_RankBoost_DbClean::HOOK => (int) $o['db_days'], Sidcraft_RankBoost_Cache::CLEAR_HOOK => (int) $o['cache_days'] ) as $hook => $days ) {
 			if ( $days > 0 && ! wp_next_scheduled( $hook ) ) { wp_schedule_single_event( self::at_0001( 0 ), $hook ); }
 		}
 	}
 
 	/** Options for a "every N days" drop-down. */
 	public static function day_options() {
-		$o = array( 0 => __( 'Never', 'sidcraft-autoseo' ), 1 => __( 'Every day at 12:01 AM', 'sidcraft-autoseo' ) );
-		for ( $i = 2; $i <= 180; $i++ ) { /* translators: %d: number of days */ $o[ $i ] = sprintf( __( 'Every %d days at 12:01 AM', 'sidcraft-autoseo' ), $i ); }
+		$o = array( 0 => __( 'Never', 'sidcraft-rankboost' ), 1 => __( 'Every day at 12:01 AM', 'sidcraft-rankboost' ) );
+		for ( $i = 2; $i <= 180; $i++ ) { /* translators: %d: number of days */ $o[ $i ] = sprintf( __( 'Every %d days at 12:01 AM', 'sidcraft-rankboost' ), $i ); }
 		return $o;
 	}
 

@@ -2,10 +2,10 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** 301 redirects created automatically when a URL changes, plus a 404 log that repairs near-miss URLs by itself. */
-class Sidcraft_AutoSEO_Redirects {
+class Sidcraft_RankBoost_Redirects {
 
-	public static function table()  { global $wpdb; return $wpdb->prefix . 'sidcraft_autoseo_redirects'; }
-	public static function table404() { global $wpdb; return $wpdb->prefix . 'sidcraft_autoseo_404'; }
+	public static function table()  { global $wpdb; return $wpdb->prefix . 'sidcraft_rankboost_redirects'; }
+	public static function table404() { global $wpdb; return $wpdb->prefix . 'sidcraft_rankboost_404'; }
 
 	public static function install() {
 		global $wpdb;
@@ -33,12 +33,12 @@ class Sidcraft_AutoSEO_Redirects {
 			PRIMARY KEY  (id),
 			UNIQUE KEY path (path)
 		) $charset;" );
-		update_option( 'sidcraft_autoseo_db_version', SIDCRAFT_AUTOSEO_VERSION, false );
+		update_option( 'sidcraft_rankboost_db_version', SIDCRAFT_RANKBOOST_VERSION, false );
 	}
 
 	public static function init() {
-		add_action( 'init', function () { if ( get_option( 'sidcraft_autoseo_db_version' ) !== SIDCRAFT_AUTOSEO_VERSION ) { self::install(); } } );
-		if ( ! Sidcraft_AutoSEO_Settings::on( 'auto_redirects' ) ) { return; }
+		add_action( 'init', function () { if ( get_option( 'sidcraft_rankboost_db_version' ) !== SIDCRAFT_RANKBOOST_VERSION ) { self::install(); } } );
+		if ( ! Sidcraft_RankBoost_Settings::on( 'auto_redirects' ) ) { return; }
 		add_action( 'template_redirect', array( __CLASS__, 'handle' ), 0 );
 		add_action( 'template_redirect', array( __CLASS__, 'handle_404' ), 99 );
 		add_action( 'post_updated', array( __CLASS__, 'on_post_updated' ), 10, 3 );
@@ -92,7 +92,7 @@ class Sidcraft_AutoSEO_Redirects {
 	/** Slug changed on a published post: the old URL keeps working. */
 	public static function on_post_updated( $post_id, $after, $before ) {
 		if ( 'publish' !== $after->post_status || 'publish' !== $before->post_status ) { return; }
-		if ( ! in_array( $after->post_type, Sidcraft_AutoSEO_Util::post_types(), true ) ) { return; }
+		if ( ! in_array( $after->post_type, Sidcraft_RankBoost_Util::post_types(), true ) ) { return; }
 		$old = get_permalink( $before );
 		$new = get_permalink( $after );
 		if ( $old && $new && $old !== $new ) {
@@ -103,7 +103,7 @@ class Sidcraft_AutoSEO_Redirects {
 		}
 	}
 
-	const GONE = 'sidcraft_autoseo_gone';
+	const GONE = 'sidcraft_rankboost_gone';
 
 	/** Address beginnings (like /itm/) that never existed on this site and are answered with 410 Gone. */
 	public static function gone_prefixes() { $g = get_option( self::GONE, array() ); return is_array( $g ) ? array_values( $g ) : array(); }
@@ -141,7 +141,7 @@ class Sidcraft_AutoSEO_Redirects {
 		if ( self::is_gone( $path ) ) { status_header( 410 ); nocache_headers(); header( 'X-Robots-Tag: noindex' ); return; } // never existed here: tell search engines to forget it, and do not list it.
 		if ( preg_match( '#\.(?:jpe?g|png|gif|webp|svg|ico|css|js|map|woff2?|ttf|php|xml|txt|zip|pdf)$#', $path ) ) { return; }
 		if ( self::is_scanner_path( $path ) ) { return; } // bot probes are not worth logging or fixing.
-		if ( Sidcraft_AutoSEO_Settings::on( 'fuzzy_404' ) ) {
+		if ( Sidcraft_RankBoost_Settings::on( 'fuzzy_404' ) ) {
 			$target = self::guess( $path );
 			if ( $target ) {
 				self::add( $raw, $target, 1 );
@@ -187,14 +187,14 @@ class Sidcraft_AutoSEO_Redirects {
 		if ( ! $segments ) { return ''; }
 		$last = sanitize_title( end( $segments ) );
 		if ( '' === $last || strlen( $last ) < 3 ) { return ''; }
-		$slugs = get_transient( 'sidcraft_autoseo_slugs' );
+		$slugs = get_transient( 'sidcraft_rankboost_slugs' );
 		if ( ! is_array( $slugs ) ) {
 			global $wpdb;
-			$types = Sidcraft_AutoSEO_Util::post_types();
+			$types = Sidcraft_RankBoost_Util::post_types();
 			$in    = implode( ',', array_fill( 0, count( $types ), '%s' ) );
 			$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_name FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ($in) AND post_name <> '' LIMIT 5000", $types ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %s per post type, built above.
 			$slugs = wp_list_pluck( $rows, 'post_name', 'ID' );
-			set_transient( 'sidcraft_autoseo_slugs', $slugs, HOUR_IN_SECONDS );
+			set_transient( 'sidcraft_rankboost_slugs', $slugs, HOUR_IN_SECONDS );
 		}
 		$best = 0; $best_id = 0;
 		foreach ( $slugs as $id => $slug ) {

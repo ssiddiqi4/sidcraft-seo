@@ -6,23 +6,23 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * that file before WordPress builds the page. Needs no change to wp-config.php, .htaccess or the server. It also
  * shrinks the HTML (comments and runs of spaces) when that option is on. Switched off by default.
  */
-class Sidcraft_AutoSEO_Cache {
+class Sidcraft_RankBoost_Cache {
 
-	const HOOK = 'sidcraft_autoseo_preload';
-	const CLEAR_HOOK = 'sidcraft_autoseo_cache_clear';
+	const HOOK = 'sidcraft_rankboost_preload';
+	const CLEAR_HOOK = 'sidcraft_rankboost_cache_clear';
 	/** Query arguments that do not change the page, so the plain cached copy is used. */
 	private static $ignore = array( 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'msclkid' );
 
 	public static function dir() {
 		$up = wp_get_upload_dir();
-		return empty( $up['error'] ) ? trailingslashit( $up['basedir'] ) . 'sidcraft-autoseo/pages' : '';
+		return empty( $up['error'] ) ? trailingslashit( $up['basedir'] ) . 'sidcraft-rankboost/pages' : '';
 	}
 
 	/* ---------------------------------------------------------- serving */
 
 	/** Called while the plugin file loads, before WordPress builds anything. */
 	public static function maybe_serve() {
-		$o = Sidcraft_AutoSEO_Speed::all();
+		$o = Sidcraft_RankBoost_Speed::all();
 		if ( ! $o['cache'] || ! self::request_ok() ) { return; }
 		$f = self::file_for_request(); if ( '' === $f || ! is_file( $f ) ) { return; }
 		if ( time() - (int) filemtime( $f ) > (int) $o['cache_hours'] * HOUR_IN_SECONDS ) { return; }
@@ -47,7 +47,7 @@ class Sidcraft_AutoSEO_Cache {
 		foreach ( $_COOKIE as $k => $v ) {
 			if ( 0 === strpos( $k, 'wordpress_logged_in_' ) || 0 === strpos( $k, 'wp-postpass_' ) || 0 === strpos( $k, 'comment_author_' ) || 0 === strpos( $k, 'wp_woocommerce_session_' ) || 'woocommerce_items_in_cart' === $k ) { return false; }
 		}
-		foreach ( Sidcraft_AutoSEO_Speed::lines( Sidcraft_AutoSEO_Speed::all()['cache_exclude'] ) as $x ) {
+		foreach ( Sidcraft_RankBoost_Speed::lines( Sidcraft_RankBoost_Speed::all()['cache_exclude'] ) as $x ) {
 			if ( false !== strpos( $uri, $x ) ) { return false; }
 		}
 		return true;
@@ -57,7 +57,8 @@ class Sidcraft_AutoSEO_Cache {
 		$d = self::dir(); if ( '' === $d ) { return ''; }
 		$host = isset( $_SERVER['HTTP_HOST'] ) ? preg_replace( '/[^a-z0-9.:-]/', '', strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) ) ) : '';
 		$path = (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/', PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only hashed.
-		if ( '' === $host ) { return ''; }
+		$own = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		if ( '' === $host || '' === $own || preg_replace( '/:\d+$/', '', $host ) !== $own ) { return ''; }
 		return $d . '/' . ( is_ssl() ? 's-' : 'h-' ) . $host . '/' . sha1( $path ) . '.html';
 	}
 
@@ -77,7 +78,7 @@ class Sidcraft_AutoSEO_Cache {
 
 	/** Decide whether this page may be saved, and if so catch its HTML. */
 	public static function start() {
-		$o = Sidcraft_AutoSEO_Speed::all();
+		$o = Sidcraft_RankBoost_Speed::all();
 		if ( ! $o['cache'] && ! $o['min_html'] ) { return; }
 		if ( is_admin() || is_feed() || is_embed() || wp_doing_ajax() || wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) { return; }
 		ob_start( array( __CLASS__, 'finish' ) );
@@ -87,13 +88,13 @@ class Sidcraft_AutoSEO_Cache {
 	public static function finish( $html ) {
 		if ( ! is_string( $html ) || strlen( $html ) < 255 || false === stripos( $html, '</html>' ) || 0 !== strpos( ltrim( $html ), '<' ) ) { return $html; }
 		foreach ( headers_list() as $h ) { if ( 0 === stripos( $h, 'content-type:' ) && false === stripos( $h, 'text/html' ) ) { return $html; } }
-		$o = Sidcraft_AutoSEO_Speed::all();
-		if ( $o['min_html'] ) { $m = Sidcraft_AutoSEO_Minify::html( $html ); if ( strlen( $m ) > 200 && false !== stripos( $m, '</html>' ) ) { $html = $m; } }
+		$o = Sidcraft_RankBoost_Speed::all();
+		if ( $o['min_html'] ) { $m = Sidcraft_RankBoost_Minify::html( $html ); if ( strlen( $m ) > 200 && false !== stripos( $m, '</html>' ) ) { $html = $m; } }
 		if ( $o['cache'] && self::storable() ) {
 			$f = self::file_for_request();
 			if ( '' !== $f && wp_mkdir_p( dirname( $f ) ) ) {
 				self::guard_dir();
-				Sidcraft_AutoSEO_Minify::write( $f, $html . "\n<!-- Page cached by Sidcraft AutoSEO " . gmdate( 'Y-m-d H:i' ) . " UTC -->" );
+				Sidcraft_RankBoost_Minify::write( $f, $html . "\n<!-- Page cached by Sidcraft RankBoost " . gmdate( 'Y-m-d H:i' ) . " UTC -->" );
 			}
 		}
 		return $html;
@@ -109,7 +110,7 @@ class Sidcraft_AutoSEO_Cache {
 
 	private static function guard_dir() {
 		$d = self::dir(); $root = dirname( $d );
-		if ( ! is_file( $root . '/index.php' ) ) { Sidcraft_AutoSEO_Minify::write( $root . '/index.php', "<?php\n// Silence is golden.\n" ); }
+		if ( ! is_file( $root . '/index.php' ) ) { Sidcraft_RankBoost_Minify::write( $root . '/index.php', "<?php\n// Silence is golden.\n" ); }
 	}
 
 	/* --------------------------------------------------------- clearing */
@@ -121,14 +122,14 @@ class Sidcraft_AutoSEO_Cache {
 	}
 
 	public static function clear_all() {
-		$d = self::dir(); $n = '' === $d ? 0 : Sidcraft_AutoSEO_Speed::rm_dir( $d );
-		if ( Sidcraft_AutoSEO_Speed::all()['cache'] && Sidcraft_AutoSEO_Speed::all()['cache_preload'] && ! wp_next_scheduled( self::HOOK, array( 0 ) ) ) { wp_schedule_single_event( time() + 20, self::HOOK, array( 0 ) ); }
+		$d = self::dir(); $n = '' === $d ? 0 : Sidcraft_RankBoost_Speed::rm_dir( $d );
+		if ( Sidcraft_RankBoost_Speed::all()['cache'] && Sidcraft_RankBoost_Speed::all()['cache_preload'] && ! wp_next_scheduled( self::HOOK, array( 0 ) ) ) { wp_schedule_single_event( time() + 20, self::HOOK, array( 0 ) ); }
 		return $n;
 	}
 
 	/** The timed clear: empty the cache, then plan the next one. */
 	public static function scheduled_clear() {
-		Sidcraft_AutoSEO_Speed::plan_next( self::CLEAR_HOOK, (int) Sidcraft_AutoSEO_Speed::all()['cache_days'] );
+		Sidcraft_RankBoost_Speed::plan_next( self::CLEAR_HOOK, (int) Sidcraft_RankBoost_Speed::all()['cache_days'] );
 		self::clear_all();
 	}
 
@@ -136,17 +137,17 @@ class Sidcraft_AutoSEO_Cache {
 
 	/** Visit the home page and a few pages and posts at a time so visitors find them already cached. */
 	public static function preload_step( $offset = 0 ) {
-		$o = Sidcraft_AutoSEO_Speed::all(); if ( ! $o['cache'] ) { return; }
+		$o = Sidcraft_RankBoost_Speed::all(); if ( ! $o['cache'] ) { return; }
 		$offset = max( 0, (int) $offset ); $per = 6; $urls = array();
 		if ( 0 === $offset ) { $urls[] = home_url( '/' ); }
 		$ids = get_posts( array( 'post_type' => array( 'page', 'post' ), 'post_status' => 'publish', 'fields' => 'ids', 'numberposts' => $per, 'offset' => $offset, 'orderby' => 'modified', 'order' => 'DESC', 'no_found_rows' => true ) );
 		foreach ( $ids as $id ) { $urls[] = get_permalink( $id ); }
-		foreach ( $urls as $u ) { wp_remote_get( $u, array( 'timeout' => 8, 'redirection' => 0, 'user-agent' => 'SidcraftAutoSEO-Preload', 'cookies' => array() ) ); }
+		foreach ( $urls as $u ) { wp_remote_get( $u, array( 'timeout' => 8, 'redirection' => 0, 'user-agent' => 'SidcraftRankBoost-Preload', 'cookies' => array() ) ); }
 		if ( count( $ids ) === $per && $offset < 300 ) { wp_schedule_single_event( time() + 15, self::HOOK, array( $offset + $per ) ); }
 	}
 
 	public static function bar( $bar ) {
-		if ( ! current_user_can( 'manage_options' ) || is_admin() || ! Sidcraft_AutoSEO_Speed::all()['cache'] ) { return; }
-		$bar->add_node( array( 'id' => 'sidcraft-autoseo-cache', 'title' => esc_html__( 'Clear page cache', 'sidcraft-autoseo' ), 'href' => wp_nonce_url( admin_url( 'admin-post.php?action=sidcraft_autoseo_speed&do=clear_cache&back=front' ), 'sidcraft_autoseo_speed' ) ) );
+		if ( ! current_user_can( 'manage_options' ) || is_admin() || ! Sidcraft_RankBoost_Speed::all()['cache'] ) { return; }
+		$bar->add_node( array( 'id' => 'sidcraft-rankboost-cache', 'title' => esc_html__( 'Clear page cache', 'sidcraft-rankboost' ), 'href' => wp_nonce_url( admin_url( 'admin-post.php?action=sidcraft_rankboost_speed&do=clear_cache&back=front' ), 'sidcraft_rankboost_speed' ) ) );
 	}
 }

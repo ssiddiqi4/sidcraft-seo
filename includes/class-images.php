@@ -2,10 +2,10 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** Alt text for every image, written automatically. */
-class Sidcraft_AutoSEO_Images {
+class Sidcraft_RankBoost_Images {
 
 	public static function init() {
-		if ( ! Sidcraft_AutoSEO_Settings::on( 'auto_alt' ) ) { return; }
+		if ( ! Sidcraft_RankBoost_Settings::on( 'auto_alt' ) ) { return; }
 		add_action( 'add_attachment', array( __CLASS__, 'on_upload' ) );
 		add_filter( 'wp_get_attachment_image_attributes', array( __CLASS__, 'attrs' ), 20, 2 );
 		add_filter( 'the_content', array( __CLASS__, 'content' ), 99 );
@@ -18,9 +18,9 @@ class Sidcraft_AutoSEO_Images {
 		$base = preg_replace( '/-(scaled|e\d{10,})$/', '', $base );
 		$base = trim( preg_replace( '/[\-_\.\s]+/', ' ', $base ) );
 		if ( '' === $base || preg_match( '/^(img|dsc|dscn|pxl|image|photo|screenshot|whatsapp|picture|pic|untitled|capture|scan|mvimg)[\s\d]*/i', $base ) || preg_match( '/^[\d\s]+$/', $base ) || strlen( $base ) < 3 ) {
-			return Sidcraft_AutoSEO_Util::clean( $fallback );
+			return Sidcraft_RankBoost_Util::clean( $fallback );
 		}
-		return ucfirst( Sidcraft_AutoSEO_Util::clean( $base ) );
+		return ucfirst( Sidcraft_RankBoost_Util::clean( $base ) );
 	}
 
 	public static function on_upload( $id ) {

@@ -92,9 +92,12 @@ class Sidcraft_VS_DB {
 		$ok = array( 'path', 'ref_host', 'source', 'campaign', 'country', 'browser', 'os', 'device' );
 		if ( ! in_array( $col, $ok, true ) ) { return array(); }
 		global $wpdb; $t = self::table(); $limit = max( 1, min( 100, (int) $limit ) );
-		$more = 'source' === $col ? " AND source <> 'internal'" : ( 'ref_host' === $col ? " AND source <> 'internal'" : '' );
-		$title = 'path' === $col ? ', MAX(title) AS title' : ", '' AS title";
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT %i AS v, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors{$title} FROM %i WHERE day BETWEEN %s AND %s AND status = 200 AND device <> 'bot' AND %i <> ''{$more} GROUP BY %i ORDER BY views DESC, v ASC LIMIT %d", $col, $t, $from, $to, $col, $col, $limit ), ARRAY_A );
+		$skip_internal = in_array( $col, array( 'source', 'ref_host' ), true ) ? 'yes' : 'no';
+		if ( 'path' === $col ) {
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT %i AS v, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors, MAX(title) AS title FROM %i WHERE day BETWEEN %s AND %s AND status = 200 AND device <> 'bot' AND %i <> '' AND ( %s = 'no' OR source <> 'internal' ) GROUP BY %i ORDER BY views DESC, v ASC LIMIT %d", $col, $t, $from, $to, $col, $skip_internal, $col, $limit ), ARRAY_A );
+		} else {
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT %i AS v, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors, '' AS title FROM %i WHERE day BETWEEN %s AND %s AND status = 200 AND device <> 'bot' AND %i <> '' AND ( %s = 'no' OR source <> 'internal' ) GROUP BY %i ORDER BY views DESC, v ASC LIMIT %d", $col, $t, $from, $to, $col, $skip_internal, $col, $limit ), ARRAY_A );
+		}
 		if ( ! is_array( $rows ) ) { return array(); }
 		foreach ( $rows as &$r ) { $r['views'] = (int) $r['views']; $r['visitors'] = (int) $r['visitors']; } unset( $r );
 		return is_array( $rows ) ? $rows : array();
