@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * stylesheets and scripts. Originals are never changed: a smaller copy is written to the uploads folder
  * and the page points to it. If anything looks wrong the original file is used.
  */
-class Sidcraft_AutoSEO_Minify {
+class Sidcraft_RankBoost_Minify {
 
 	/* ---------------------------------------------------------------- CSS */
 
@@ -185,34 +185,34 @@ class Sidcraft_AutoSEO_Minify {
 
 	public static function init() {
 		if ( is_admin() ) { return; }
-		$o = Sidcraft_AutoSEO_Speed::all();
+		$o = Sidcraft_RankBoost_Speed::all();
 		if ( $o['min_css'] ) { add_filter( 'style_loader_src', array( __CLASS__, 'asset' ), 9999, 2 ); }
 		if ( $o['min_js'] ) { add_filter( 'script_loader_src', array( __CLASS__, 'asset' ), 9999, 2 ); }
 	}
 
 	public static function asset( $src, $handle ) {
 		if ( ! is_string( $src ) || '' === $src || is_admin() ) { return $src; }
-		$o = Sidcraft_AutoSEO_Speed::all();
+		$o = Sidcraft_RankBoost_Speed::all();
 		$u = strtok( $src, '?' );
 		$ext = strtolower( pathinfo( (string) wp_parse_url( $u, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
 		if ( 'css' !== $ext && 'js' !== $ext ) { return $src; }
 		if ( preg_match( '/\.min\.(css|js)$/i', $u ) ) { return $src; }
 		if ( 'js' === $ext && ! $o['min_js'] ) { return $src; }
 		if ( 'css' === $ext && ! $o['min_css'] ) { return $src; }
-		foreach ( Sidcraft_AutoSEO_Speed::lines( $o['min_exclude'] ) as $x ) { if ( $x === $handle || false !== strpos( $u, $x ) ) { return $src; } }
+		foreach ( Sidcraft_RankBoost_Speed::lines( $o['min_exclude'] ) as $x ) { if ( $x === $handle || false !== strpos( $u, $x ) ) { return $src; } }
 		$abs = self::local_path( $u );
 		if ( '' === $abs || ! is_file( $abs ) ) { return $src; }
 		$size = (int) filesize( $abs ); if ( $size < 200 || $size > 400000 ) { return $src; }
 		$up = wp_get_upload_dir(); if ( ! empty( $up['error'] ) ) { return $src; }
 		$name = substr( sha1( $abs ), 0, 12 ) . '-' . filemtime( $abs ) . '-' . $size . '.' . $ext;
-		$dir  = trailingslashit( $up['basedir'] ) . 'sidcraft-autoseo/min/';
-		$url  = trailingslashit( $up['baseurl'] ) . 'sidcraft-autoseo/min/' . $name;
+		$dir  = trailingslashit( $up['basedir'] ) . 'sidcraft-rankboost/min/';
+		$url  = trailingslashit( $up['baseurl'] ) . 'sidcraft-rankboost/min/' . $name;
 		if ( is_file( $dir . $name ) ) { return $url; }
-		$bad = get_option( 'sidcraft_autoseo_min_bad', array() ); if ( is_array( $bad ) && isset( $bad[ $name ] ) ) { return $src; }
+		$bad = get_option( 'sidcraft_rankboost_min_bad', array() ); if ( is_array( $bad ) && isset( $bad[ $name ] ) ) { return $src; }
 		$code = file_get_contents( $abs ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading the site's own local file.
 		$min  = false === $code ? '' : ( 'css' === $ext ? self::css( $code, trailingslashit( dirname( $u ) ) ) : self::js( $code ) );
 		if ( '' === $min || strlen( $min ) >= strlen( $code ) || ! wp_mkdir_p( $dir ) || false === self::write( $dir . $name, $min ) ) {
-			$bad = is_array( $bad ) ? $bad : array(); $bad[ $name ] = 1; update_option( 'sidcraft_autoseo_min_bad', array_slice( $bad, -200, null, true ), false );
+			$bad = is_array( $bad ) ? $bad : array(); $bad[ $name ] = 1; update_option( 'sidcraft_rankboost_min_bad', array_slice( $bad, -200, null, true ), false );
 			return $src;
 		}
 		return $url;
@@ -239,7 +239,7 @@ class Sidcraft_AutoSEO_Minify {
 
 	public static function clear() {
 		$up = wp_get_upload_dir(); if ( ! empty( $up['error'] ) ) { return 0; }
-		delete_option( 'sidcraft_autoseo_min_bad' );
-		return Sidcraft_AutoSEO_Speed::rm_dir( trailingslashit( $up['basedir'] ) . 'sidcraft-autoseo/min' );
+		delete_option( 'sidcraft_rankboost_min_bad' );
+		return Sidcraft_RankBoost_Speed::rm_dir( trailingslashit( $up['basedir'] ) . 'sidcraft-rankboost/min' );
 	}
 }

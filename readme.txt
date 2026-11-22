@@ -1,11 +1,11 @@
-=== Sidcraft AutoSEO ===
+=== Sidcraft RankBoost ===
 Contributors: ssiddiqi4
 Donate link: https://paypal.me/SSiddiqi275
 Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.9.2
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,7 +13,9 @@ Hands-off SEO for pages and posts: automatic titles, descriptions, social cards,
 
 == Description ==
 
-**Sidcraft AutoSEO optimises every page and post on its own.** Install it, activate it, and it keeps working as you publish and edit. There is nothing to configure and no keywords to enter.
+**Sidcraft RankBoost optimises every page and post on its own.** Install it, activate it, and it keeps working as you publish and edit. There is nothing to configure and no keywords to enter.
+
+Sidcraft RankBoost is an independent plugin by Suhaib Siddiqi. It is not affiliated with, endorsed by or connected to any other SEO product, service or company.
 
 = Automatic on every page =
 
@@ -32,7 +34,7 @@ A page cache, HTML/CSS/JavaScript minify, database clean-up (revisions, spam, ex
 
 = Visitor Stats (built in) =
 
-Private, cookie-free visitor statistics in your dashboard (Sidcraft AutoSEO > Visitor Stats): visitors, page views, pages per visit, bounce rate, time on page, live visitors, top pages, traffic sources, referring sites, campaigns, countries (with Cloudflare), browsers, systems, devices and broken-link (404) hits. No cookies, no stored IP addresses, nothing sent to another service, and it works with page caches. Exclude roles and your own IP addresses (with an "Add My IP Address" button), respect Do Not Track, export CSV, automatic clean-up of old data.
+Private, cookie-free visitor statistics in your dashboard (Sidcraft RankBoost > Visitor Stats): visitors, page views, pages per visit, bounce rate, time on page, live visitors, top pages, traffic sources, referring sites, campaigns, countries (with Cloudflare), browsers, systems, devices and broken-link (404) hits. No cookies, no stored IP addresses, nothing sent to another service, and it works with page caches. Exclude roles and your own IP addresses (with an "Add My IP Address" button), respect Do Not Track, export CSV, automatic clean-up of old data.
 
 = Self-repairing =
 
@@ -54,11 +56,11 @@ Text written in Sidcraft Page Builder is read and optimised like normal content.
 
 = Plays well with other SEO plugins =
 
-If Yoast SEO, Rank Math, All in One SEO, SEOPress or The SEO Framework is active, Sidcraft AutoSEO stops printing titles, descriptions, social cards, structured data and sitemap changes so nothing is duplicated. Auditing, redirects, alt text and IndexNow keep running.
+If Yoast SEO, Rank Math, All in One SEO, SEOPress or The SEO Framework is active, Sidcraft RankBoost stops printing titles, descriptions, social cards, structured data and sitemap changes so nothing is duplicated. Auditing, redirects, alt text and IndexNow keep running.
 
 = You stay in control =
 
-Every automatic action has an on/off switch under **Sidcraft AutoSEO > Settings**. On any single page, the **Sidcraft AutoSEO** box on the edit screen lets you override the title, description or main phrase, or hide the page from search engines. You never have to.
+Every automatic action has an on/off switch under **Sidcraft RankBoost > Settings**. On any single page, the **Sidcraft RankBoost** box on the edit screen lets you override the title, description or main phrase, or hide the page from search engines. You never have to.
 
 = What it cannot do =
 
@@ -74,7 +76,7 @@ This plugin can send page addresses to the **IndexNow** protocol endpoint so tha
 * **Service:** IndexNow, operated with participating search engines. Documentation: https://www.indexnow.org/documentation
 * **Terms and privacy:** https://www.indexnow.org/terms and the Microsoft Privacy Statement at https://privacy.microsoft.com/privacystatement
 
-You can turn this off at any time under **Sidcraft AutoSEO > Settings** ("Tell Bing & other IndexNow search engines..."). The plugin also serves a plain-text key file at `/{key}.txt` on your site, which IndexNow uses to confirm that you own the site.
+You can turn this off at any time under **Sidcraft RankBoost > Settings** ("Tell Bing & other IndexNow search engines..."). The plugin also serves a plain-text key file at `/{key}.txt` on your site, which IndexNow uses to confirm that you own the site.
 
 **Optional broken-link check of other websites.** If you tick "Broken-link scan also checks links to other websites" (off by default), the plugin sends a lightweight HEAD or GET request to each external address that appears in your content, to see whether it still exists. Only the linked address is requested, nothing about your site or visitors is sent, and only the HTTP status is read. With the option off, only links to your own site are checked, and those requests never leave your server.
 
@@ -82,9 +84,9 @@ No other external services are used. No data is collected by the plugin author.
 
 == Installation ==
 
-1. Upload the `sidcraft-autoseo` folder to `/wp-content/plugins/`, or install it from the Plugins screen.
-2. Activate **Sidcraft AutoSEO**.
-3. That is all. Open **Sidcraft AutoSEO** in the admin menu to see how your pages score, and press **Run audit now** to check everything straight away.
+1. Upload the `sidcraft-rankboost` folder to `/wp-content/plugins/`, or install it from the Plugins screen.
+2. Activate **Sidcraft RankBoost**.
+3. That is all. Open **Sidcraft RankBoost** in the admin menu to see how your pages score, and press **Run audit now** to check everything straight away.
 
 == Frequently Asked Questions ==
 
@@ -106,7 +108,7 @@ It works with any theme that calls `wp_head()` and the standard title support. I
 
 = I already use Yoast SEO / Rank Math / another SEO plugin. =
 
-Sidcraft AutoSEO detects it and stops printing titles, descriptions, social cards, structured data and sitemap changes so nothing is duplicated. Redirects, alt text, the audit and IndexNow still work.
+Sidcraft RankBoost detects it and stops printing titles, descriptions, social cards, structured data and sitemap changes so nothing is duplicated. Redirects, alt text, the audit and IndexNow still work.
 
 = Does it add a sitemap? =
 
@@ -126,7 +128,7 @@ Titles, descriptions and structured data are built per request from data WordPre
 
 = What happens if I uninstall it? =
 
-The plugin stops. Its tables and settings are kept unless you ticked "Delete all Sidcraft AutoSEO data when the plugin is deleted" in Settings before deleting it.
+The plugin stops. Its tables and settings are kept unless you ticked "Delete all Sidcraft RankBoost data when the plugin is deleted" in Settings before deleting it.
 
 = Is anything sent to the author? =
 
@@ -144,6 +146,17 @@ No. See "External services" for the one optional request the plugin makes (Index
 8. Settings: every automatic feature has an on/off switch.
 
 == Changelog ==
+
+= 2.0.0 =
+* Renamed to **Sidcraft RankBoost** (slug `sidcraft-rankboost`) and new text domain `sidcraft-rankboost`.
+* Review fix: the plugin no longer forces indexing or sitemaps on. It respects Settings > Reading > "Discourage search engines from indexing this site", and it no longer removes a noindex rule added by WordPress or another plugin.
+* Review fix: sitemap links now use `get_sitemap_url( 'index' )` instead of a fixed `/wp-sitemap.xml` path, so they work on subdirectory installs and sites without pretty permalinks.
+* Review fix: the admin stylesheet is only loaded on the plugin's own screens and on post lists that show the score badge, instead of every admin page.
+* Review fix: the database table identifiers use `$wpdb->prefix`, `$wpdb->get_charset_collate()` and `dbDelta()` as required. Activation produces no output.
+* Review fix: Plugin Check finding in the visitor statistics query (SQL built with an interpolated title fragment). All SQL is now fixed text with prepared values.
+* Fixed: visits that the tracker skipped (Do Not Track, bots, excluded addresses, rate limit) returned an undefined variable instead of a response, which could break the tracking request.
+* Security: the page cache only reads and writes files for the site's own host name, so a forged Host header cannot create folders.
+* Performance: the visitor statistics report is cached for one minute per date range; the "online now" count is always live.
 
 = 1.9.2 =
 * Fixed: buttons that ask "Are you sure?" (Block, Dismiss all, Remove link, clean-up and delete buttons) stopped working silently once the browser's "Don't allow this page to prompt you again" box was ticked. They now use the plugin's own confirmation box, which the browser cannot switch off.
@@ -205,7 +218,7 @@ No. See "External services" for the one optional request the plugin makes (Index
 * Broken URLs tab: when many broken addresses start with the same folder (for example /itm/), one click marks that folder as “gone for good”. The site answers 410 Gone, which makes Google stop asking, and the addresses leave the list. A folder where a real page lives cannot be marked.
 
 = 1.5.0 =
-* New: edit the SEO of any page by hand. A box on the editing screen and an “Edit SEO” screen inside AutoSEO (Pages & Posts) let you set the SEO title, meta description, main phrase, canonical address, noindex and nofollow, and the social share title, text and image. Empty fields stay automatic. A live preview shows how the page looks in search results.
+* New: edit the SEO of any page by hand. A box on the editing screen and an “Edit SEO” screen inside RankBoost (Pages & Posts) let you set the SEO title, meta description, main phrase, canonical address, noindex and nofollow, and the social share title, text and image. Empty fields stay automatic. A live preview shows how the page looks in search results.
 
 = 1.4.9 =
 * Broken URLs tab: an address on the Sidcraft Bot Shield never-block list shows “never blocked” and cannot be blocked from here.
@@ -264,6 +277,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 2.0.0 =
+Renamed to Sidcraft RankBoost. Also fixes the WordPress.org review items: indexing and sitemap settings are now respected, and sitemap links work on every permalink setup.
 
 = 1.8.3 =
 Code tidy-up only.

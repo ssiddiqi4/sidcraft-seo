@@ -2,10 +2,10 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** Small technical clean-ups that search engines like. */
-class Sidcraft_AutoSEO_Hygiene {
+class Sidcraft_RankBoost_Hygiene {
 
 	public static function init() {
-		if ( ! Sidcraft_AutoSEO_Settings::on( 'hygiene' ) ) { return; }
+		if ( ! Sidcraft_RankBoost_Settings::on( 'hygiene' ) ) { return; }
 		remove_action( 'wp_head', 'wp_generator' );
 		remove_action( 'wp_head', 'rsd_link' );
 		remove_action( 'wp_head', 'wlwmanifest_link' );
@@ -27,7 +27,7 @@ class Sidcraft_AutoSEO_Hygiene {
 			exit;
 		}
 		// Single-author sites: the author archive repeats the blog page.
-		if ( is_author() && Sidcraft_AutoSEO_Settings::on( 'redirect_author' ) && (int) count_users()['total_users'] <= 1 ) {
+		if ( is_author() && Sidcraft_RankBoost_Settings::on( 'redirect_author' ) && (int) count_users()['total_users'] <= 1 ) {
 			wp_safe_redirect( home_url( '/' ), 301 );
 			exit;
 		}

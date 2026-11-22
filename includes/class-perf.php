@@ -2,12 +2,12 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** Performance and debugging helpers: slow-page log, admin-bar timing, error-log reader, server health checks, speed test. */
-class Sidcraft_AutoSEO_Perf {
+class Sidcraft_RankBoost_Perf {
 
-	const SLOW = 'sidcraft_autoseo_slow';
+	const SLOW = 'sidcraft_rankboost_slow';
 
 	public static function init() {
-		if ( ! Sidcraft_AutoSEO_Speed::all()['profile'] ) { return; }
+		if ( ! Sidcraft_RankBoost_Speed::all()['profile'] ) { return; }
 		add_action( 'shutdown', array( __CLASS__, 'record' ), 0 );
 		add_action( 'admin_bar_menu', array( __CLASS__, 'bar' ), 100 );
 	}
@@ -21,7 +21,7 @@ class Sidcraft_AutoSEO_Perf {
 	/** Keep the slowest recent page loads (only those over the limit you set). */
 	public static function record() {
 		if ( 'cli' === PHP_SAPI || wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) { return; }
-		$n = self::now(); if ( $n['ms'] < (int) Sidcraft_AutoSEO_Speed::all()['slow_ms'] ) { return; }
+		$n = self::now(); if ( $n['ms'] < (int) Sidcraft_RankBoost_Speed::all()['slow_ms'] ) { return; }
 		$uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		$log = get_option( self::SLOW, array() ); $log = is_array( $log ) ? $log : array();
 		array_unshift( $log, array( 't' => time(), 'url' => substr( $uri, 0, 200 ), 'ms' => $n['ms'], 'q' => $n['q'], 'mem' => $n['mem'], 'where' => is_admin() ? 'admin' : 'site' ) );
@@ -33,7 +33,7 @@ class Sidcraft_AutoSEO_Perf {
 	public static function bar( $bar ) {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
 		$n = self::now();
-		$bar->add_node( array( 'id' => 'sidcraft-autoseo-perf', 'title' => esc_html( sprintf( /* translators: 1: seconds, 2: number of database queries, 3: memory */ __( '⏱ %1$ss · %2$d queries · %3$s', 'sidcraft-autoseo' ), number_format_i18n( $n['ms'] / 1000, 2 ), $n['q'], size_format( $n['mem'], 0 ) ) ), 'href' => admin_url( 'admin.php?page=sidcraft-autoseo&tab=speed&sec=debug' ) ) );
+		$bar->add_node( array( 'id' => 'sidcraft-rankboost-perf', 'title' => esc_html( sprintf( /* translators: 1: seconds, 2: number of database queries, 3: memory */ __( '⏱ %1$ss · %2$d queries · %3$s', 'sidcraft-rankboost' ), number_format_i18n( $n['ms'] / 1000, 2 ), $n['q'], size_format( $n['mem'], 0 ) ) ), 'href' => admin_url( 'admin.php?page=sidcraft-rankboost&tab=speed&sec=debug' ) ) );
 	}
 
 	/* ------------------------------------------------------------ error log */
@@ -91,35 +91,35 @@ class Sidcraft_AutoSEO_Perf {
 		global $wpdb; $r = array();
 		$add = function ( $l, $v, $s, $a = '' ) use ( &$r ) { $r[] = array( $l, $v, $s, $a ); };
 		$php = PHP_VERSION;
-		$add( 'PHP', $php, version_compare( $php, '8.1', '>=' ) ? 'ok' : ( version_compare( $php, '7.4', '>=' ) ? 'warn' : 'bad' ), version_compare( $php, '8.1', '>=' ) ? '' : __( 'Newer PHP versions are noticeably faster. Ask your host to move you to PHP 8.2 or newer.', 'sidcraft-autoseo' ) );
+		$add( 'PHP', $php, version_compare( $php, '8.1', '>=' ) ? 'ok' : ( version_compare( $php, '7.4', '>=' ) ? 'warn' : 'bad' ), version_compare( $php, '8.1', '>=' ) ? '' : __( 'Newer PHP versions are noticeably faster. Ask your host to move you to PHP 8.2 or newer.', 'sidcraft-rankboost' ) );
 		$ml = wp_convert_hr_to_bytes( ini_get( 'memory_limit' ) );
-		$add( __( 'PHP memory limit', 'sidcraft-autoseo' ), ini_get( 'memory_limit' ) . ' · ' . sprintf( /* translators: %s: memory */ __( 'this page used %s at its peak', 'sidcraft-autoseo' ), size_format( memory_get_peak_usage( true ), 0 ) ), ( -1 === $ml || $ml >= 256 * MB_IN_BYTES ) ? 'ok' : ( $ml >= 128 * MB_IN_BYTES ? 'warn' : 'bad' ), ( -1 === $ml || $ml >= 256 * MB_IN_BYTES ) ? '' : __( 'Page builders, WooCommerce and backups run out of memory below 256M. Raise memory_limit with your host.', 'sidcraft-autoseo' ) );
-		$add( __( 'Time limit', 'sidcraft-autoseo' ), (string) ini_get( 'max_execution_time' ) . 's', ( 0 === (int) ini_get( 'max_execution_time' ) || (int) ini_get( 'max_execution_time' ) >= 60 ) ? 'ok' : 'warn', __( 'Under 60 seconds can cut off imports, backups and scans.', 'sidcraft-autoseo' ) );
+		$add( __( 'PHP memory limit', 'sidcraft-rankboost' ), ini_get( 'memory_limit' ) . ' · ' . sprintf( /* translators: %s: memory */ __( 'this page used %s at its peak', 'sidcraft-rankboost' ), size_format( memory_get_peak_usage( true ), 0 ) ), ( -1 === $ml || $ml >= 256 * MB_IN_BYTES ) ? 'ok' : ( $ml >= 128 * MB_IN_BYTES ? 'warn' : 'bad' ), ( -1 === $ml || $ml >= 256 * MB_IN_BYTES ) ? '' : __( 'Page builders, WooCommerce and backups run out of memory below 256M. Raise memory_limit with your host.', 'sidcraft-rankboost' ) );
+		$add( __( 'Time limit', 'sidcraft-rankboost' ), (string) ini_get( 'max_execution_time' ) . 's', ( 0 === (int) ini_get( 'max_execution_time' ) || (int) ini_get( 'max_execution_time' ) >= 60 ) ? 'ok' : 'warn', __( 'Under 60 seconds can cut off imports, backups and scans.', 'sidcraft-rankboost' ) );
 		$ver = (string) $wpdb->get_var( 'SELECT VERSION()' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- asking the server for its version; nothing to cache.
-		 $add( __( 'Database', 'sidcraft-autoseo' ), $ver, 'ok' );
-		$oc = wp_using_ext_object_cache(); $add( __( 'Object cache (Redis/Memcached)', 'sidcraft-autoseo' ), $oc ? __( 'active', 'sidcraft-autoseo' ) : __( 'not used', 'sidcraft-autoseo' ), $oc ? 'ok' : 'warn', $oc ? '' : __( 'An object cache saves database work on busy or dynamic sites. Many hosts offer Redis for free.', 'sidcraft-autoseo' ) );
-		$op = function_exists( 'opcache_get_status' ) && ini_get( 'opcache.enable' ); $add( 'OPcache', $op ? __( 'on', 'sidcraft-autoseo' ) : __( 'off', 'sidcraft-autoseo' ), $op ? 'ok' : 'bad', $op ? '' : __( 'OPcache keeps compiled PHP in memory. Turning it on is the cheapest big speed-up; ask your host.', 'sidcraft-autoseo' ) );
-		$gz = extension_loaded( 'zlib' ); $add( __( 'Compression (zlib)', 'sidcraft-autoseo' ), $gz ? __( 'available', 'sidcraft-autoseo' ) : __( 'missing', 'sidcraft-autoseo' ), $gz ? 'ok' : 'warn', __( 'Pages should be sent gzip or brotli compressed; most hosts do this at the server.', 'sidcraft-autoseo' ) );
-		$add( 'HTTPS', is_ssl() ? __( 'yes', 'sidcraft-autoseo' ) : __( 'no', 'sidcraft-autoseo' ), is_ssl() ? 'ok' : 'warn', is_ssl() ? '' : __( 'Browsers and search engines expect HTTPS.', 'sidcraft-autoseo' ) );
-		$dbg = defined( 'WP_DEBUG' ) && WP_DEBUG; $add( 'WP_DEBUG', $dbg ? __( 'on', 'sidcraft-autoseo' ) : __( 'off', 'sidcraft-autoseo' ), $dbg ? 'warn' : 'ok', $dbg ? __( 'Fine while you are debugging. Turn it off on a live site: it slows pages and can show errors to visitors.', 'sidcraft-autoseo' ) : '' );
-		if ( defined( 'SAVEQUERIES' ) && SAVEQUERIES ) { $add( 'SAVEQUERIES', __( 'on', 'sidcraft-autoseo' ), 'warn', __( 'Records every query in memory. Turn it off when you finish debugging.', 'sidcraft-autoseo' ) ); }
-		$cron = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON; $add( 'WP-Cron', $cron ? __( 'run by the server', 'sidcraft-autoseo' ) : __( 'runs when visitors arrive', 'sidcraft-autoseo' ), 'ok', '' );
-		list( $auto, ) = Sidcraft_AutoSEO_DbClean::autoload();
-		$add( __( 'Autoloaded options', 'sidcraft-autoseo' ), size_format( $auto, 1 ), $auto < 800000 ? 'ok' : ( $auto < 3000000 ? 'warn' : 'bad' ), $auto < 800000 ? '' : __( 'This data is loaded on every page. See the biggest entries on the Database screen; they usually belong to plugins you can remove.', 'sidcraft-autoseo' ) );
-		$ap = count( (array) get_option( 'active_plugins', array() ) ); $add( __( 'Active plugins', 'sidcraft-autoseo' ), (string) $ap, $ap <= 25 ? 'ok' : 'warn', $ap <= 25 ? '' : __( 'Every plugin adds loading time. Remove ones you do not use.', 'sidcraft-autoseo' ) );
+		 $add( __( 'Database', 'sidcraft-rankboost' ), $ver, 'ok' );
+		$oc = wp_using_ext_object_cache(); $add( __( 'Object cache (Redis/Memcached)', 'sidcraft-rankboost' ), $oc ? __( 'active', 'sidcraft-rankboost' ) : __( 'not used', 'sidcraft-rankboost' ), $oc ? 'ok' : 'warn', $oc ? '' : __( 'An object cache saves database work on busy or dynamic sites. Many hosts offer Redis for free.', 'sidcraft-rankboost' ) );
+		$op = function_exists( 'opcache_get_status' ) && ini_get( 'opcache.enable' ); $add( 'OPcache', $op ? __( 'on', 'sidcraft-rankboost' ) : __( 'off', 'sidcraft-rankboost' ), $op ? 'ok' : 'bad', $op ? '' : __( 'OPcache keeps compiled PHP in memory. Turning it on is the cheapest big speed-up; ask your host.', 'sidcraft-rankboost' ) );
+		$gz = extension_loaded( 'zlib' ); $add( __( 'Compression (zlib)', 'sidcraft-rankboost' ), $gz ? __( 'available', 'sidcraft-rankboost' ) : __( 'missing', 'sidcraft-rankboost' ), $gz ? 'ok' : 'warn', __( 'Pages should be sent gzip or brotli compressed; most hosts do this at the server.', 'sidcraft-rankboost' ) );
+		$add( 'HTTPS', is_ssl() ? __( 'yes', 'sidcraft-rankboost' ) : __( 'no', 'sidcraft-rankboost' ), is_ssl() ? 'ok' : 'warn', is_ssl() ? '' : __( 'Browsers and search engines expect HTTPS.', 'sidcraft-rankboost' ) );
+		$dbg = defined( 'WP_DEBUG' ) && WP_DEBUG; $add( 'WP_DEBUG', $dbg ? __( 'on', 'sidcraft-rankboost' ) : __( 'off', 'sidcraft-rankboost' ), $dbg ? 'warn' : 'ok', $dbg ? __( 'Fine while you are debugging. Turn it off on a live site: it slows pages and can show errors to visitors.', 'sidcraft-rankboost' ) : '' );
+		if ( defined( 'SAVEQUERIES' ) && SAVEQUERIES ) { $add( 'SAVEQUERIES', __( 'on', 'sidcraft-rankboost' ), 'warn', __( 'Records every query in memory. Turn it off when you finish debugging.', 'sidcraft-rankboost' ) ); }
+		$cron = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON; $add( 'WP-Cron', $cron ? __( 'run by the server', 'sidcraft-rankboost' ) : __( 'runs when visitors arrive', 'sidcraft-rankboost' ), 'ok', '' );
+		list( $auto, ) = Sidcraft_RankBoost_DbClean::autoload();
+		$add( __( 'Autoloaded options', 'sidcraft-rankboost' ), size_format( $auto, 1 ), $auto < 800000 ? 'ok' : ( $auto < 3000000 ? 'warn' : 'bad' ), $auto < 800000 ? '' : __( 'This data is loaded on every page. See the biggest entries on the Database screen; they usually belong to plugins you can remove.', 'sidcraft-rankboost' ) );
+		$ap = count( (array) get_option( 'active_plugins', array() ) ); $add( __( 'Active plugins', 'sidcraft-rankboost' ), (string) $ap, $ap <= 25 ? 'ok' : 'warn', $ap <= 25 ? '' : __( 'Every plugin adds loading time. Remove ones you do not use.', 'sidcraft-rankboost' ) );
 		if ( ! function_exists( 'get_plugins' ) ) { require_once ABSPATH . 'wp-admin/includes/plugin.php'; }
-		$inactive = max( 0, count( get_plugins() ) - $ap ); $add( __( 'Inactive plugins', 'sidcraft-autoseo' ), (string) $inactive, 0 === $inactive ? 'ok' : 'warn', 0 === $inactive ? '' : __( 'Deactivated plugins still need updates and can be a way in for attackers. Delete the ones you will not use.', 'sidcraft-autoseo' ) );
+		$inactive = max( 0, count( get_plugins() ) - $ap ); $add( __( 'Inactive plugins', 'sidcraft-rankboost' ), (string) $inactive, 0 === $inactive ? 'ok' : 'warn', 0 === $inactive ? '' : __( 'Deactivated plugins still need updates and can be a way in for attackers. Delete the ones you will not use.', 'sidcraft-rankboost' ) );
 		$up = wp_get_upload_dir(); $free = ! empty( $up['basedir'] ) ? @disk_free_space( $up['basedir'] ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- not available on every host.
-		if ( false !== $free ) { $add( __( 'Free disk space', 'sidcraft-autoseo' ), size_format( $free, 1 ), $free > 500 * MB_IN_BYTES ? 'ok' : 'warn', $free > 500 * MB_IN_BYTES ? '' : __( 'Low disk space breaks uploads, caches and backups.', 'sidcraft-autoseo' ) ); }
-		$s = Sidcraft_AutoSEO_Speed::all(); $add( __( 'Page cache', 'sidcraft-autoseo' ), $s['cache'] ? __( 'on', 'sidcraft-autoseo' ) : __( 'off', 'sidcraft-autoseo' ), $s['cache'] ? 'ok' : 'warn', $s['cache'] ? '' : __( 'Turning on the page cache is the biggest speed-up for most sites.', 'sidcraft-autoseo' ) );
+		if ( false !== $free ) { $add( __( 'Free disk space', 'sidcraft-rankboost' ), size_format( $free, 1 ), $free > 500 * MB_IN_BYTES ? 'ok' : 'warn', $free > 500 * MB_IN_BYTES ? '' : __( 'Low disk space breaks uploads, caches and backups.', 'sidcraft-rankboost' ) ); }
+		$s = Sidcraft_RankBoost_Speed::all(); $add( __( 'Page cache', 'sidcraft-rankboost' ), $s['cache'] ? __( 'on', 'sidcraft-rankboost' ) : __( 'off', 'sidcraft-rankboost' ), $s['cache'] ? 'ok' : 'warn', $s['cache'] ? '' : __( 'Turning on the page cache is the biggest speed-up for most sites.', 'sidcraft-rankboost' ) );
 		return $r;
 	}
 
 	/** Time the home page three ways: fresh, then twice more so a cached copy can show. */
 	public static function speed_test() {
 		$home = home_url( '/' ); $rows = array();
-		foreach ( array( array( __( 'Fresh page (cache bypassed)', 'sidcraft-autoseo' ), add_query_arg( 'sbs_t', wp_rand( 1000, 999999 ), $home ) ), array( __( 'Normal page, first visit', 'sidcraft-autoseo' ), $home ), array( __( 'Normal page, second visit', 'sidcraft-autoseo' ), $home ) ) as $t ) {
-			$s = microtime( true ); $res = wp_remote_get( $t[1], array( 'timeout' => 20, 'redirection' => 3, 'cookies' => array(), 'user-agent' => 'SidcraftAutoSEO-Test' ) ); $ms = (int) round( ( microtime( true ) - $s ) * 1000 );
+		foreach ( array( array( __( 'Fresh page (cache bypassed)', 'sidcraft-rankboost' ), add_query_arg( 'sbs_t', wp_rand( 1000, 999999 ), $home ) ), array( __( 'Normal page, first visit', 'sidcraft-rankboost' ), $home ), array( __( 'Normal page, second visit', 'sidcraft-rankboost' ), $home ) ) as $t ) {
+			$s = microtime( true ); $res = wp_remote_get( $t[1], array( 'timeout' => 20, 'redirection' => 3, 'cookies' => array(), 'user-agent' => 'SidcraftRankBoost-Test' ) ); $ms = (int) round( ( microtime( true ) - $s ) * 1000 );
 			if ( is_wp_error( $res ) ) { $rows[] = array( $t[0], 0, 0, $res->get_error_message() ); continue; }
 			$rows[] = array( $t[0], $ms, strlen( (string) wp_remote_retrieve_body( $res ) ), 'HIT' === wp_remote_retrieve_header( $res, 'x-sidcraft-cache' ) ? 'cached' : 'built by WordPress', (int) wp_remote_retrieve_response_code( $res ) );
 		}

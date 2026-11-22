@@ -2,9 +2,9 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** One option array with safe defaults. Everything is on by default so nothing needs configuring. */
-class Sidcraft_AutoSEO_Settings {
+class Sidcraft_RankBoost_Settings {
 
-	const OPTION = 'sidcraft_autoseo_settings';
+	const OPTION = 'sidcraft_rankboost_settings';
 
 	public static function defaults() {
 		return array(
@@ -35,7 +35,7 @@ class Sidcraft_AutoSEO_Settings {
 
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'maybe_seed' ) );
-		add_action( 'update_option_' . self::OPTION, function () { delete_transient( 'sidcraft_autoseo_scope' ); delete_transient( 'sidcraft_autoseo_summary' ); } );
+		add_action( 'update_option_' . self::OPTION, function () { delete_transient( 'sidcraft_rankboost_scope' ); delete_transient( 'sidcraft_rankboost_summary' ); } );
 	}
 
 	public static function maybe_seed() {

@@ -4,9 +4,9 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- database clean-up works on WordPress's own tables; table names come from $wpdb and every value is prepared.
 
 /** Finds and removes database clutter: old revisions, spam, expired transients, orphaned rows. Nothing is removed until you press a button. */
-class Sidcraft_AutoSEO_DbClean {
+class Sidcraft_RankBoost_DbClean {
 
-	const HOOK = 'sidcraft_autoseo_db_auto';
+	const HOOK = 'sidcraft_rankboost_db_auto';
 
 	public static function init() {
 		add_action( self::HOOK, array( __CLASS__, 'auto' ) );
@@ -15,23 +15,23 @@ class Sidcraft_AutoSEO_DbClean {
 	/** What can be cleaned: key => label, help. */
 	public static function items() {
 		return array(
-			'revisions'   => array( __( 'Old post revisions', 'sidcraft-autoseo' ), __( 'Saved copies of every edit. The newest few per post are kept (set above).', 'sidcraft-autoseo' ) ),
-			'autodrafts'  => array( __( 'Auto-drafts', 'sidcraft-autoseo' ), __( 'Empty drafts WordPress creates when you open “Add new” and never save.', 'sidcraft-autoseo' ) ),
-			'trash'       => array( __( 'Posts and pages in the Trash', 'sidcraft-autoseo' ), __( 'Items you already deleted.', 'sidcraft-autoseo' ) ),
-			'spam'        => array( __( 'Spam comments', 'sidcraft-autoseo' ), __( 'Comments marked as spam.', 'sidcraft-autoseo' ) ),
-			'trashcomm'   => array( __( 'Trashed comments', 'sidcraft-autoseo' ), __( 'Comments you already deleted.', 'sidcraft-autoseo' ) ),
-			'transients'  => array( __( 'Expired transients', 'sidcraft-autoseo' ), __( 'Temporary data stored in the options table that has already expired.', 'sidcraft-autoseo' ) ),
-			'oembed'      => array( __( 'Embed (oEmbed) caches', 'sidcraft-autoseo' ), __( 'Saved copies of embedded videos and tweets. They are fetched again when needed.', 'sidcraft-autoseo' ) ),
-			'orph_post'   => array( __( 'Orphaned post meta', 'sidcraft-autoseo' ), __( 'Extra post data whose post no longer exists.', 'sidcraft-autoseo' ) ),
-			'orph_comm'   => array( __( 'Orphaned comment meta', 'sidcraft-autoseo' ), __( 'Extra comment data whose comment no longer exists.', 'sidcraft-autoseo' ) ),
-			'orph_rel'    => array( __( 'Orphaned category/tag links', 'sidcraft-autoseo' ), __( 'Category and tag links to posts that no longer exist.', 'sidcraft-autoseo' ) ),
-			'log404'      => array( __( 'Old broken-URL log entries', 'sidcraft-autoseo' ), __( 'AutoSEO’s own 404 log entries not seen for 60 days.', 'sidcraft-autoseo' ) ),
+			'revisions'   => array( __( 'Old post revisions', 'sidcraft-rankboost' ), __( 'Saved copies of every edit. The newest few per post are kept (set above).', 'sidcraft-rankboost' ) ),
+			'autodrafts'  => array( __( 'Auto-drafts', 'sidcraft-rankboost' ), __( 'Empty drafts WordPress creates when you open “Add new” and never save.', 'sidcraft-rankboost' ) ),
+			'trash'       => array( __( 'Posts and pages in the Trash', 'sidcraft-rankboost' ), __( 'Items you already deleted.', 'sidcraft-rankboost' ) ),
+			'spam'        => array( __( 'Spam comments', 'sidcraft-rankboost' ), __( 'Comments marked as spam.', 'sidcraft-rankboost' ) ),
+			'trashcomm'   => array( __( 'Trashed comments', 'sidcraft-rankboost' ), __( 'Comments you already deleted.', 'sidcraft-rankboost' ) ),
+			'transients'  => array( __( 'Expired transients', 'sidcraft-rankboost' ), __( 'Temporary data stored in the options table that has already expired.', 'sidcraft-rankboost' ) ),
+			'oembed'      => array( __( 'Embed (oEmbed) caches', 'sidcraft-rankboost' ), __( 'Saved copies of embedded videos and tweets. They are fetched again when needed.', 'sidcraft-rankboost' ) ),
+			'orph_post'   => array( __( 'Orphaned post meta', 'sidcraft-rankboost' ), __( 'Extra post data whose post no longer exists.', 'sidcraft-rankboost' ) ),
+			'orph_comm'   => array( __( 'Orphaned comment meta', 'sidcraft-rankboost' ), __( 'Extra comment data whose comment no longer exists.', 'sidcraft-rankboost' ) ),
+			'orph_rel'    => array( __( 'Orphaned category/tag links', 'sidcraft-rankboost' ), __( 'Category and tag links to posts that no longer exist.', 'sidcraft-rankboost' ) ),
+			'log404'      => array( __( 'Old broken-URL log entries', 'sidcraft-rankboost' ), __( 'RankBoost’s own 404 log entries not seen for 60 days.', 'sidcraft-rankboost' ) ),
 		);
 	}
 
 	/** Number of rows each item would remove. */
 	public static function counts() {
-		global $wpdb; $keep = (int) Sidcraft_AutoSEO_Speed::all()['db_keep_rev']; $c = array();
+		global $wpdb; $keep = (int) Sidcraft_RankBoost_Speed::all()['db_keep_rev']; $c = array();
 		$c['revisions']  = self::extra_revisions( $keep, true );
 		$c['autodrafts'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'auto-draft'" );
 		$c['trash']      = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'trash'" );
@@ -47,7 +47,7 @@ class Sidcraft_AutoSEO_DbClean {
 	}
 
 	private static function log_table() {
-		global $wpdb; $t = $wpdb->prefix . 'sidcraft_autoseo_404';
+		global $wpdb; $t = $wpdb->prefix . 'sidcraft_rankboost_404';
 		return $t === $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $t ) ) ) ? $t : '';
 	}
 
@@ -66,7 +66,7 @@ class Sidcraft_AutoSEO_DbClean {
 
 	/** Clean the chosen items. Returns key => rows removed. */
 	public static function run( $keys ) {
-		global $wpdb; $out = array(); $keep = (int) Sidcraft_AutoSEO_Speed::all()['db_keep_rev']; $end = microtime( true ) + 20;
+		global $wpdb; $out = array(); $keep = (int) Sidcraft_RankBoost_Speed::all()['db_keep_rev']; $end = microtime( true ) + 20;
 		foreach ( $keys as $k ) {
 			$n = 0;
 			switch ( $k ) {
@@ -115,7 +115,7 @@ class Sidcraft_AutoSEO_DbClean {
 		return $out;
 	}
 
-	public static function auto() { Sidcraft_AutoSEO_Speed::plan_next( self::HOOK, (int) Sidcraft_AutoSEO_Speed::all()['db_days'] ); self::run( array( 'revisions', 'autodrafts', 'trash', 'spam', 'trashcomm', 'transients', 'orph_post', 'orph_comm', 'orph_rel', 'log404' ) ); self::optimize(); }
+	public static function auto() { Sidcraft_RankBoost_Speed::plan_next( self::HOOK, (int) Sidcraft_RankBoost_Speed::all()['db_days'] ); self::run( array( 'revisions', 'autodrafts', 'trash', 'spam', 'trashcomm', 'transients', 'orph_post', 'orph_comm', 'orph_rel', 'log404' ) ); self::optimize(); }
 
 	/** Tables with size and reclaimable space. */
 	public static function tables() {

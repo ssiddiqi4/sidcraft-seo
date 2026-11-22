@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** Automatic internal links: posts that link to nothing get a short "Related" list at the end. */
-class Sidcraft_AutoSEO_Related {
+class Sidcraft_RankBoost_Related {
 
 	public static function init() {
 		add_filter( 'the_content', array( __CLASS__, 'append' ), 100 );
@@ -44,17 +44,17 @@ class Sidcraft_AutoSEO_Related {
 	public static function is_hidden( $post ) {
 		if ( ! $post ) { return true; }
 		if ( (int) get_option( 'page_on_front' ) === (int) $post->ID || is_front_page() ) { return true; }
-		return (bool) get_post_meta( $post->ID, '_sidcraft_autoseo_no_related', true );
+		return (bool) get_post_meta( $post->ID, '_sidcraft_rankboost_no_related', true );
 	}
 
 	public static function append( $content ) {
 		if ( ! is_singular() || ! in_the_loop() || ! is_main_query() ) { return $content; }
 		$post = get_post();
 		if ( self::is_hidden( $post ) ) { return $content; }
-		if ( ! $post || ! in_array( $post->post_type, Sidcraft_AutoSEO_Util::post_types(), true ) ) { return $content; }
-		$extra_ids = Sidcraft_AutoSEO_Fixer::extra_ids( $post->ID );
+		if ( ! $post || ! in_array( $post->post_type, Sidcraft_RankBoost_Util::post_types(), true ) ) { return $content; }
+		$extra_ids = Sidcraft_RankBoost_Fixer::extra_ids( $post->ID );
 		$no_links  = ! self::has_internal_links( $post );
-		$auto      = $no_links && ( ( 'post' === $post->post_type && Sidcraft_AutoSEO_Settings::on( 'related_links' ) ) || ( 'post' !== $post->post_type && Sidcraft_AutoSEO_Settings::on( 'related_pages' ) ) );
+		$auto      = $no_links && ( ( 'post' === $post->post_type && Sidcraft_RankBoost_Settings::on( 'related_links' ) ) || ( 'post' !== $post->post_type && Sidcraft_RankBoost_Settings::on( 'related_pages' ) ) );
 		if ( ! $extra_ids && ! $auto ) { return $content; }
 		$items = array();
 		foreach ( $extra_ids as $id ) {
@@ -70,11 +70,11 @@ class Sidcraft_AutoSEO_Related {
 		if ( ! $items ) { return $content; }
 		$li = '';
 		foreach ( $items as $p ) { $li .= '<li><a href="' . esc_url( get_permalink( $p ) ) . '">' . esc_html( wp_strip_all_tags( get_the_title( $p ) ) ) . '</a></li>'; }
-		$title = esc_html__( 'You may also like', 'sidcraft-autoseo' );
+		$title = esc_html__( 'You may also like', 'sidcraft-rankboost' );
 		$style = 'max-width:1100px;margin:40px auto 0;padding:0 24px';
-		if ( 'open' === Sidcraft_AutoSEO_Settings::get( 'related_style' ) ) {
-			return $content . '<nav class="sidcraft-autoseo-related" aria-label="' . esc_attr__( 'Related pages', 'sidcraft-autoseo' ) . '" style="' . esc_attr( $style ) . '"><h2 style="font-size:1.3em">' . $title . '</h2><ul>' . $li . '</ul></nav>';
+		if ( 'open' === Sidcraft_RankBoost_Settings::get( 'related_style' ) ) {
+			return $content . '<nav class="sidcraft-rankboost-related" aria-label="' . esc_attr__( 'Related pages', 'sidcraft-rankboost' ) . '" style="' . esc_attr( $style ) . '"><h2 style="font-size:1.3em">' . $title . '</h2><ul>' . $li . '</ul></nav>';
 		}
-		return $content . '<nav class="sidcraft-autoseo-related" aria-label="' . esc_attr__( 'Related pages', 'sidcraft-autoseo' ) . '" style="' . esc_attr( $style ) . '"><details><summary style="cursor:pointer;font-weight:600">' . $title . '</summary><ul>' . $li . '</ul></details></nav>';
+		return $content . '<nav class="sidcraft-rankboost-related" aria-label="' . esc_attr__( 'Related pages', 'sidcraft-rankboost' ) . '" style="' . esc_attr( $style ) . '"><details><summary style="cursor:pointer;font-weight:600">' . $title . '</summary><ul>' . $li . '</ul></details></nav>';
 	}
 }

@@ -2,28 +2,28 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** Broken link finder: scans the links inside pages and posts, lists the ones that do not work, and repairs them. */
-class Sidcraft_AutoSEO_Links {
+class Sidcraft_RankBoost_Links {
 
-	const ITEMS   = 'sidcraft_autoseo_links_items';
-	const STATE   = 'sidcraft_autoseo_links_state';
-	const IGNORED = 'sidcraft_autoseo_links_ignored';
-	const EVENT   = 'sidcraft_autoseo_links_more';
+	const ITEMS   = 'sidcraft_rankboost_links_items';
+	const STATE   = 'sidcraft_rankboost_links_state';
+	const IGNORED = 'sidcraft_rankboost_links_ignored';
+	const EVENT   = 'sidcraft_rankboost_links_more';
 
 	public static function init() {
 		add_action( self::EVENT, array( __CLASS__, 'event' ) );
-		add_action( Sidcraft_AutoSEO_Audit::CRON, array( __CLASS__, 'daily' ), 20 );
+		add_action( Sidcraft_RankBoost_Audit::CRON, array( __CLASS__, 'daily' ), 20 );
 	}
 
 	/* ---------- reading links out of a post ---------- */
 
 	public static function reasons() {
 		return array(
-			'missing'     => __( 'Page not found (404)', 'sidcraft-autoseo' ),
-			'unpublished' => __( 'Points to a page that is not published', 'sidcraft-autoseo' ),
-			'redirected'  => __( 'Only works through a redirect', 'sidcraft-autoseo' ),
-			'file'        => __( 'File is missing', 'sidcraft-autoseo' ),
-			'gone'        => __( 'Page not found (404)', 'sidcraft-autoseo' ),
-			'dns'         => __( 'Website could not be found', 'sidcraft-autoseo' ),
+			'missing'     => __( 'Page not found (404)', 'sidcraft-rankboost' ),
+			'unpublished' => __( 'Points to a page that is not published', 'sidcraft-rankboost' ),
+			'redirected'  => __( 'Only works through a redirect', 'sidcraft-rankboost' ),
+			'file'        => __( 'File is missing', 'sidcraft-rankboost' ),
+			'gone'        => __( 'Page not found (404)', 'sidcraft-rankboost' ),
+			'dns'         => __( 'Website could not be found', 'sidcraft-rankboost' ),
 		);
 	}
 
@@ -56,7 +56,7 @@ class Sidcraft_AutoSEO_Links {
 
 	private static function has_redirect( $path ) {
 		global $wpdb;
-		return (bool) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE source = %s', Sidcraft_AutoSEO_Redirects::table(), $path ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
+		return (bool) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE source = %s', Sidcraft_RankBoost_Redirects::table(), $path ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
 	}
 
 	/** Returns array( reason, suggestion ) or null when the link works (or cannot be judged). */
@@ -67,7 +67,7 @@ class Sidcraft_AutoSEO_Links {
 	}
 
 	private static function check_internal( $url ) {
-		$path = Sidcraft_AutoSEO_Redirects::normalize( $url );
+		$path = Sidcraft_RankBoost_Redirects::normalize( $url );
 		if ( '/' === $path || '' === $path ) { return null; }
 		if ( preg_match( '#^/(?:wp-admin|wp-login|wp-json|wp-includes|feed|comments)#', $path ) ) { return null; }
 		$up = wp_get_upload_dir();
@@ -82,22 +82,22 @@ class Sidcraft_AutoSEO_Links {
 			return 'publish' === get_post_status( $id ) || 'attachment' === get_post_type( $id ) ? null : array( 'unpublished', '' );
 		}
 		// Not a post or page we know: ask the site itself (covers archives, shop pages, custom routes).
-		$res = wp_remote_head( $url, array( 'timeout' => 5, 'redirection' => 0, 'sslverify' => (bool) apply_filters( 'sidcraft_autoseo_loopback_sslverify', false ), 'headers' => array( 'X-Sidcraft-Linkcheck' => '1' ) ) ); // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout -- short, local request.
+		$res = wp_remote_head( $url, array( 'timeout' => 5, 'redirection' => 0, 'sslverify' => (bool) apply_filters( 'sidcraft_rankboost_loopback_sslverify', false ), 'headers' => array( 'X-Sidcraft-Linkcheck' => '1' ) ) ); // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout -- short, local request.
 		if ( is_wp_error( $res ) ) { return null; }
 		$code = (int) wp_remote_retrieve_response_code( $res );
-		if ( 404 === $code || 410 === $code ) { return array( 'missing', Sidcraft_AutoSEO_Redirects::guess( $path ) ); }
+		if ( 404 === $code || 410 === $code ) { return array( 'missing', Sidcraft_RankBoost_Redirects::guess( $path ) ); }
 		if ( $code >= 300 && $code < 400 ) {
 			$to = (string) wp_remote_retrieve_header( $res, 'location' );
-			if ( '' !== $to && Sidcraft_AutoSEO_Redirects::normalize( $to ) !== $path && self::is_internal( $to ) ) { return array( 'redirected', $to ); }
+			if ( '' !== $to && Sidcraft_RankBoost_Redirects::normalize( $to ) !== $path && self::is_internal( $to ) ) { return array( 'redirected', $to ); }
 		}
 		return null;
 	}
 
 	private static function check_external( $url ) {
-		$key    = 'sidcraft_autoseo_lc_' . md5( $url );
+		$key    = 'sidcraft_rankboost_lc_' . md5( $url );
 		$cached = get_transient( $key );
 		if ( false !== $cached ) { return 'ok' === $cached ? null : array( $cached, '' ); }
-		$args = array( 'timeout' => 8, 'redirection' => 4, 'user-agent' => 'Mozilla/5.0 (compatible; SidcraftAutoSEO link checker)' );
+		$args = array( 'timeout' => 8, 'redirection' => 4, 'user-agent' => 'Mozilla/5.0 (compatible; SidcraftRankBoost link checker)' );
 		$res  = wp_safe_remote_head( $url, $args );
 		$code = is_wp_error( $res ) ? 0 : (int) wp_remote_retrieve_response_code( $res );
 		if ( in_array( $code, array( 403, 405, 501 ), true ) || ( ! is_wp_error( $res ) && $code >= 400 && 404 !== $code && 410 !== $code ) ) {
@@ -170,11 +170,11 @@ class Sidcraft_AutoSEO_Links {
 		if ( $st['done'] ) { return false; }
 		$deadline = time() + $seconds;
 		$items    = self::items();
-		$ext      = Sidcraft_AutoSEO_Settings::on( 'check_external' );
-		$types    = Sidcraft_AutoSEO_Util::post_types();
+		$ext      = Sidcraft_RankBoost_Settings::on( 'check_external' );
+		$types    = Sidcraft_RankBoost_Util::post_types();
 		$in       = implode( ',', array_fill( 0, count( $types ), '%s' ) );
 		$more     = true;
-		$scope    = Sidcraft_AutoSEO_Audit::scope_ids();
+		$scope    = Sidcraft_RankBoost_Audit::scope_ids();
 		while ( time() < $deadline ) {
 			$only = null === $scope ? '' : ( $scope ? ' AND ID IN (' . implode( ',', array_map( 'intval', $scope ) ) . ')' : ' AND 1 = 0' );
 			$ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE ID > %d AND post_status = 'publish' AND post_type IN ($in){$only} ORDER BY ID ASC LIMIT 10", array_merge( array( (int) $st['cursor'] ), $types ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %s per post type, built above.
@@ -197,12 +197,12 @@ class Sidcraft_AutoSEO_Links {
 	}
 
 	public static function event() {
-		if ( Sidcraft_AutoSEO_Audit::busy() ) { wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, self::EVENT ); return; }
+		if ( Sidcraft_RankBoost_Audit::busy() ) { wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, self::EVENT ); return; }
 		if ( self::batch( 8 ) ) { wp_schedule_single_event( time() + 2 * MINUTE_IN_SECONDS, self::EVENT ); }
 	}
 
 	public static function daily() {
-		if ( ! Sidcraft_AutoSEO_Settings::on( 'daily_audit' ) ) { return; }
+		if ( ! Sidcraft_RankBoost_Settings::on( 'daily_audit' ) ) { return; }
 		self::start();
 		wp_schedule_single_event( time() + 60, self::EVENT );
 	}
@@ -255,40 +255,40 @@ class Sidcraft_AutoSEO_Links {
 		$post = get_post( $post_id );
 		if ( ! $post ) { return; }
 		$items = self::items();
-		self::scan_post( $post, $items, Sidcraft_AutoSEO_Settings::on( 'check_external' ), time() + 20 );
+		self::scan_post( $post, $items, Sidcraft_RankBoost_Settings::on( 'check_external' ), time() + 20 );
 		self::save_items( $items );
 	}
 
 	/** Apply one repair to one list entry. Returns a short message. */
 	public static function repair( $id, $how, $new = '' ) {
 		$items = self::items();
-		if ( ! isset( $items[ $id ] ) ) { return __( 'That link is no longer in the list.', 'sidcraft-autoseo' ); }
+		if ( ! isset( $items[ $id ] ) ) { return __( 'That link is no longer in the list.', 'sidcraft-rankboost' ); }
 		$it = $items[ $id ];
 		if ( 'ignore' === $how ) {
 			$ign   = self::ignored();
 			$ign[] = md5( $it['url'] );
 			update_option( self::IGNORED, array_values( array_unique( $ign ) ), false );
-			return __( 'Link ignored. It will not be listed again.', 'sidcraft-autoseo' );
+			return __( 'Link ignored. It will not be listed again.', 'sidcraft-rankboost' );
 		}
-		if ( ! current_user_can( 'edit_post', $it['post_id'] ) ) { return __( 'You are not allowed to edit that page.', 'sidcraft-autoseo' ); }
+		if ( ! current_user_can( 'edit_post', $it['post_id'] ) ) { return __( 'You are not allowed to edit that page.', 'sidcraft-rankboost' ); }
 		$new = esc_url_raw( trim( $new ) );
 		if ( 'unlink' === $how ) {
 			self::unlink( $it['post_id'], $it['url'] );
 			unset( $items[ $id ] ); self::save_items( $items ); self::rescan( $it['post_id'] );
-			return __( 'Link removed. The words stay on the page.', 'sidcraft-autoseo' );
+			return __( 'Link removed. The words stay on the page.', 'sidcraft-rankboost' );
 		}
-		if ( '' === $new ) { return __( 'Type or choose a new address first.', 'sidcraft-autoseo' ); }
+		if ( '' === $new ) { return __( 'Type or choose a new address first.', 'sidcraft-rankboost' ); }
 		if ( 'redirect' === $how ) {
-			if ( ! $it['internal'] ) { return __( 'Redirects only work for addresses on your own site.', 'sidcraft-autoseo' ); }
-			if ( ! Sidcraft_AutoSEO_Redirects::add( $it['url'], $new ) ) { return __( 'Could not save that redirect: check the address.', 'sidcraft-autoseo' ); }
+			if ( ! $it['internal'] ) { return __( 'Redirects only work for addresses on your own site.', 'sidcraft-rankboost' ); }
+			if ( ! Sidcraft_RankBoost_Redirects::add( $it['url'], $new ) ) { return __( 'Could not save that redirect: check the address.', 'sidcraft-rankboost' ); }
 			foreach ( $items as $k => $o ) { if ( $o['url'] === $it['url'] ) { unset( $items[ $k ] ); } }
 			self::save_items( $items );
-			return __( 'Redirect saved. Everyone who follows the old address now arrives at the new one.', 'sidcraft-autoseo' );
+			return __( 'Redirect saved. Everyone who follows the old address now arrives at the new one.', 'sidcraft-rankboost' );
 		}
 		$n = self::replace( $it['post_id'], $it['url'], $new );
 		unset( $items[ $id ] ); self::save_items( $items ); self::rescan( $it['post_id'] );
 		/* translators: %d: number of places changed. */
-		return $n ? sprintf( _n( 'Link updated (%d place).', 'Link updated (%d places).', $n, 'sidcraft-autoseo' ), $n ) : __( 'Nothing to change: the link was not found in the page text.', 'sidcraft-autoseo' );
+		return $n ? sprintf( _n( 'Link updated (%d place).', 'Link updated (%d places).', $n, 'sidcraft-rankboost' ), $n ) : __( 'Nothing to change: the link was not found in the page text.', 'sidcraft-rankboost' );
 	}
 
 	/** Apply the suggested address to every entry that has one. */
@@ -301,6 +301,6 @@ class Sidcraft_AutoSEO_Links {
 			}
 		}
 		/* translators: %d: number of links. */
-		return sprintf( _n( '%d link repaired using the closest matching page.', '%d links repaired using the closest matching page.', $n, 'sidcraft-autoseo' ), $n );
+		return sprintf( _n( '%d link repaired using the closest matching page.', '%d links repaired using the closest matching page.', $n, 'sidcraft-rankboost' ), $n );
 	}
 }
