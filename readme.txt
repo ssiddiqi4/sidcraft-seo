@@ -154,6 +154,7 @@ No. See "External services" for the one optional request the plugin makes (Index
 * Review fix: the admin stylesheet is only loaded on the plugin's own screens and on post lists that show the score badge, instead of every admin page.
 * Review fix: the database table identifiers use `$wpdb->prefix`, `$wpdb->get_charset_collate()` and `dbDelta()` as required. Activation produces no output.
 * Review fix: Plugin Check finding in the visitor statistics query (SQL built with an interpolated title fragment). All SQL is now fixed text with prepared values.
+* Fixed: the visitor statistics showed zero because the tracking script recorded every page view as a 404 (WordPress passes settings to JavaScript as text, and the text "0" was read as true). Do Not Track is now respected only when the setting is on.
 * Fixed: visits that the tracker skipped (Do Not Track, bots, excluded addresses, rate limit) returned an undefined variable instead of a response, which could break the tracking request.
 * Security: the page cache only reads and writes files for the site's own host name, so a forged Host header cannot create folders.
 * Performance: the visitor statistics report is cached for one minute per date range; the "online now" count is always live.
