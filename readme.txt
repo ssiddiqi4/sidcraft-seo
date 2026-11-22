@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,10 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 2.0.1 =
+* Performance: Visitor Stats now counts page views through a lightweight endpoint (includes/visitors/hit.php) that loads only the WordPress core, about 10 ms instead of a full WordPress request for every page view and for every time ping. It falls back to the REST route automatically if the file cannot start. Fewer busy PHP workers means a faster admin on shared hosting.
+* Performance: background link scans, audits and cache preloading no longer overlap and wait while the server is busy (see 2.0.0 notes).
+
 = 2.0.0 =
 * Performance: fixed the admin slowing down after the plugin had been active for a while. Background scans (broken links, audit, cache preload) no longer overlap, take turns with a lock, wait while the server is busy, and cap their own loopback requests. Visitor Stats no longer stores one transient per visitor in the options table (old ones are cleaned up daily), and the dashboard widget is cached.
 * Renamed to **Sidcraft RankBoost** (slug `sidcraft-rankboost`) and new text domain `sidcraft-rankboost`.
@@ -279,6 +283,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 2.0.1 =
+Faster Visitor Stats: page views are counted by a lightweight endpoint, so the admin stays responsive under traffic.
 
 = 2.0.0 =
 Renamed to Sidcraft RankBoost. Also fixes the WordPress.org review items: indexing and sitemap settings are now respected, and sitemap links work on every permalink setup.

@@ -6,8 +6,17 @@
 	var respectDnt = String(c.dnt) === '1', isNotFound = String(c.nf) === '1';
 	if (respectDnt && (navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.globalPrivacyControl)) { return; }
 	var id = 0, key = '', shown = 0, last = Date.now(), sent = 0;
+	// The lightweight endpoint (hit.php) costs a few milliseconds; the REST route boots all of WordPress. Try the light one first, use REST if it is unavailable.
+	var fast = c.fast && !window.sidcraftVSNoFast ? c.fast : '';
+	function send(url, data, keep) {
+		return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), keepalive: !!keep, credentials: 'omit' });
+	}
 	function post(path, data, keep) {
-		return fetch(c.url + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), keepalive: !!keep, credentials: 'omit' });
+		if (!fast) { return send(c.url + path, data, keep); }
+		return send(fast + '?a=' + path.replace('/', ''), data, keep).then(function (r) {
+			if (r.ok) { return r; }
+			fast = ''; return send(c.url + path, data, keep);
+		}, function () { fast = ''; return send(c.url + path, data, keep); });
 	}
 	function tick() { var n = Date.now(); if (document.visibilityState === 'visible') { shown += n - last; } last = n; }
 	function leave() {

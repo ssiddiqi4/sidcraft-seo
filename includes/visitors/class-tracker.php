@@ -24,7 +24,7 @@ class Sidcraft_VS_Tracker {
 		if ( ! $o['enabled'] || is_admin() || is_preview() || is_customize_preview() || is_feed() || self::skip_user() ) { return; }
 		if ( is_404() && ! $o['track_404'] ) { return; }
 		wp_enqueue_script( 'sidcraft-vs-track', SIDCRAFT_VS_URL . 'assets/js/track.js', array(), SIDCRAFT_VS_VERSION, array( 'in_footer' => true, 'strategy' => 'defer' ) );
-		wp_localize_script( 'sidcraft-vs-track', 'sidcraftVS', array( 'url' => esc_url_raw( rest_url( 'sidcraft-vs/v1' ) ), 'nf' => is_404() ? 1 : 0, 'dnt' => $o['respect_dnt'] ? 1 : 0 ) );
+		wp_localize_script( 'sidcraft-vs-track', 'sidcraftVS', array( 'url' => esc_url_raw( rest_url( 'sidcraft-vs/v1' ) ), 'fast' => esc_url_raw( SIDCRAFT_VS_URL . 'hit.php' ), 'nf' => is_404() ? 1 : 0, 'dnt' => $o['respect_dnt'] ? 1 : 0 ) );
 	}
 
 	public static function routes() {
@@ -46,10 +46,20 @@ class Sidcraft_VS_Tracker {
 		return substr( hash( 'sha256', get_option( 'sidcraft_vs_salt', '' ) . '|' . $day . '|' . $ip . '|' . $ua ), 0, 16 );
 	}
 
-	private static function sign( $id ) { return substr( hash_hmac( 'sha256', 'svs' . (int) $id, wp_salt( 'auth' ) ), 0, 20 ); }
+	/** Signature that proves a page view id came from us. Uses constants and one option only, so it also works in the lightweight endpoint (wp_salt() is not loaded there). */
+	private static function sign( $id ) { return substr( hash_hmac( 'sha256', 'svs' . (int) $id, ( defined( 'AUTH_KEY' ) ? AUTH_KEY : '' ) . ( defined( 'AUTH_SALT' ) ? AUTH_SALT : '' ) . get_option( 'sidcraft_vs_salt', '' ) ), 0, 20 ); }
+
+	/** The site's own host without www, read from the option (home_url() is not loaded in the lightweight endpoint). */
+	private static function own_host() { return preg_replace( '/^www\./', '', strtolower( (string) parse_url( (string) get_option( 'home' ), PHP_URL_HOST ) ) ); }
 
 	public static function hit( WP_REST_Request $req ) {
-		$o = Sidcraft_VS_Settings::all(); $none = new WP_REST_Response( array( 'ok' => 0 ), 200 );
+		$p = $req->get_json_params(); if ( ! is_array( $p ) ) { $p = $req->get_body_params(); }
+		return new WP_REST_Response( self::record( is_array( $p ) ? $p : array() ), 200 );
+	}
+
+	/** Records one page view. Returns the JSON answer as an array. Used by the REST route and by the lightweight endpoint (hit.php). */
+	public static function record( array $p ) {
+		$o = Sidcraft_VS_Settings::all(); $none = array( 'ok' => 0 );
 		if ( ! $o['enabled'] ) { return $none; }
 		if ( $o['respect_dnt'] && ( ( isset( $_SERVER['HTTP_DNT'] ) && '1' === $_SERVER['HTTP_DNT'] ) || ( isset( $_SERVER['HTTP_SEC_GPC'] ) && '1' === $_SERVER['HTTP_SEC_GPC'] ) ) ) { return $none; }
 		$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ), 0, 400 ) : '';
@@ -58,7 +68,6 @@ class Sidcraft_VS_Tracker {
 		$ip = self::ip();
 		if ( '' === $ip || in_array( $ip, Sidcraft_VS_Settings::lines( $o['exclude_ips'] ), true ) ) { return $none; }
 
-		$p = $req->get_json_params(); if ( ! is_array( $p ) ) { $p = $req->get_body_params(); }
 		$path = isset( $p['p'] ) ? sanitize_text_field( (string) $p['p'] ) : '';
 		if ( '' === $path || '/' !== $path[0] ) { return $none; }
 		$path  = substr( $path, 0, 255 );
@@ -72,8 +81,8 @@ class Sidcraft_VS_Tracker {
 		// Where the visitor came from.
 		$host = ''; $src = 'direct'; $camp = '';
 		$ref  = isset( $p['r'] ) ? esc_url_raw( (string) $p['r'] ) : '';
-		if ( '' !== $ref ) { $h = wp_parse_url( $ref, PHP_URL_HOST ); $host = $h ? preg_replace( '/^www\./', '', strtolower( $h ) ) : ''; }
-		$own = preg_replace( '/^www\./', '', strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) );
+		if ( '' !== $ref ) { $h = parse_url( $ref, PHP_URL_HOST ); $host = $h ? preg_replace( '/^www\./', '', strtolower( $h ) ) : ''; }
+		$own = self::own_host();
 		if ( '' !== $host && $host === $own ) { $src = 'internal'; $host = ''; }
 		elseif ( '' !== $host ) { $src = Sidcraft_VS_UA::source_of( $host ); }
 		if ( ! empty( $p['q'] ) ) {
@@ -93,14 +102,18 @@ class Sidcraft_VS_Tracker {
 			'ts' => gmdate( 'Y-m-d H:i:s' ), 'day' => wp_date( 'Y-m-d' ), 'hr' => (int) wp_date( 'G' ), 'visitor' => $visitor, 'path' => $path, 'title' => $title, 'status' => $status,
 			'ref_host' => $host, 'source' => $src, 'campaign' => $camp, 'browser' => $browser, 'os' => $os, 'device' => $device, 'country' => $country, 'duration' => 0,
 		) );
-		return new WP_REST_Response( array( 'ok' => $id ? 1 : 0, 'id' => $id, 'k' => $id ? self::sign( $id ) : '' ), 200 );
+		return array( 'ok' => $id ? 1 : 0, 'id' => $id, 'k' => $id ? self::sign( $id ) : '' );
 	}
 
 	/** The page reports how long it was open (the visible time, capped at 30 minutes). */
 	public static function time( WP_REST_Request $req ) {
 		$p = $req->get_json_params(); if ( ! is_array( $p ) ) { $p = $req->get_body_params(); }
+		return new WP_REST_Response( self::record_time( is_array( $p ) ? $p : array() ), 200 );
+	}
+
+	public static function record_time( array $p ) {
 		$id = isset( $p['id'] ) ? (int) $p['id'] : 0; $k = isset( $p['k'] ) ? (string) $p['k'] : ''; $s = isset( $p['s'] ) ? (int) $p['s'] : 0;
 		if ( $id > 0 && $s > 0 && hash_equals( self::sign( $id ), $k ) ) { Sidcraft_VS_DB::set_duration( $id, min( 1800, $s ) ); }
-		return new WP_REST_Response( array( 'ok' => 1 ), 200 );
+		return array( 'ok' => 1 );
 	}
 }
