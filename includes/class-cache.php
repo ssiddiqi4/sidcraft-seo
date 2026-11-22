@@ -116,8 +116,11 @@ class Sidcraft_RankBoost_Cache {
 	/* --------------------------------------------------------- clearing */
 
 	/** Several saves in one request clear only once. */
-	public static function clear_soon() {
-		static $done = false; if ( $done ) { return; } $done = true;
+	public static function clear_soon( $id = 0 ) {
+		static $done = false; if ( $done ) { return; }
+		// Autosaves and revisions never change what visitors see; clearing (and re-preloading) for each one is wasted work.
+		if ( $id && in_array( current_filter(), array( 'save_post', 'deleted_post', 'trashed_post', 'untrashed_post' ), true ) && ( wp_is_post_revision( $id ) || wp_is_post_autosave( $id ) ) ) { return; }
+		$done = true;
 		self::clear_all();
 	}
 
@@ -138,12 +141,13 @@ class Sidcraft_RankBoost_Cache {
 	/** Visit the home page and a few pages and posts at a time so visitors find them already cached. */
 	public static function preload_step( $offset = 0 ) {
 		$o = Sidcraft_RankBoost_Speed::all(); if ( ! $o['cache'] ) { return; }
-		$offset = max( 0, (int) $offset ); $per = 6; $urls = array();
+		if ( Sidcraft_RankBoost_Audit::busy() ) { wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, self::HOOK, array( (int) $offset ) ); return; }
+		$offset = max( 0, (int) $offset ); $per = 3; $urls = array();
 		if ( 0 === $offset ) { $urls[] = home_url( '/' ); }
 		$ids = get_posts( array( 'post_type' => array( 'page', 'post' ), 'post_status' => 'publish', 'fields' => 'ids', 'numberposts' => $per, 'offset' => $offset, 'orderby' => 'modified', 'order' => 'DESC', 'no_found_rows' => true ) );
 		foreach ( $ids as $id ) { $urls[] = get_permalink( $id ); }
-		foreach ( $urls as $u ) { wp_remote_get( $u, array( 'timeout' => 8, 'redirection' => 0, 'user-agent' => 'SidcraftRankBoost-Preload', 'cookies' => array() ) ); }
-		if ( count( $ids ) === $per && $offset < 300 ) { wp_schedule_single_event( time() + 15, self::HOOK, array( $offset + $per ) ); }
+		foreach ( $urls as $u ) { wp_remote_get( $u, array( 'timeout' => 5, 'redirection' => 0, 'user-agent' => 'SidcraftRankBoost-Preload', 'cookies' => array() ) ); }
+		if ( count( $ids ) === $per && $offset < 150 ) { wp_schedule_single_event( time() + 45, self::HOOK, array( $offset + $per ) ); }
 	}
 
 	public static function bar( $bar ) {

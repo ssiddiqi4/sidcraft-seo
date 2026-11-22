@@ -60,6 +60,9 @@ class Sidcraft_RankBoost_Links {
 	}
 
 	/** Returns array( reason, suggestion ) or null when the link works (or cannot be judged). */
+	/** Loopback requests made in this PHP request (capped so one scan step cannot flood the server). */
+	private static $loopbacks = 0;
+
 	public static function check( $url, $allow_external ) {
 		$url = preg_replace( '/#.*$/', '', $url );
 		if ( self::is_internal( $url ) ) { return self::check_internal( $url ); }
@@ -82,15 +85,23 @@ class Sidcraft_RankBoost_Links {
 			return 'publish' === get_post_status( $id ) || 'attachment' === get_post_type( $id ) ? null : array( 'unpublished', '' );
 		}
 		// Not a post or page we know: ask the site itself (covers archives, shop pages, custom routes).
-		$res = wp_remote_head( $url, array( 'timeout' => 5, 'redirection' => 0, 'sslverify' => (bool) apply_filters( 'sidcraft_rankboost_loopback_sslverify', false ), 'headers' => array( 'X-Sidcraft-Linkcheck' => '1' ) ) ); // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout -- short, local request.
+		// Each of these ties up a second PHP worker, so they are cached, capped per run and skipped while the server is busy.
+		$lk = 'sidcraft_rankboost_lb_' . md5( $url );
+		$hit = get_transient( $lk );
+		if ( is_array( $hit ) ) { return $hit ? $hit : null; }
+		if ( self::$loopbacks >= 5 || Sidcraft_RankBoost_Audit::busy() ) { return null; }
+		++self::$loopbacks;
+		$res = wp_remote_head( $url, array( 'timeout' => 3, 'redirection' => 0, 'sslverify' => (bool) apply_filters( 'sidcraft_rankboost_loopback_sslverify', false ), 'headers' => array( 'X-Sidcraft-Linkcheck' => '1' ) ) ); // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout -- short, local request.
 		if ( is_wp_error( $res ) ) { return null; }
 		$code = (int) wp_remote_retrieve_response_code( $res );
-		if ( 404 === $code || 410 === $code ) { return array( 'missing', Sidcraft_RankBoost_Redirects::guess( $path ) ); }
-		if ( $code >= 300 && $code < 400 ) {
+		$out  = array();
+		if ( 404 === $code || 410 === $code ) { $out = array( 'missing', Sidcraft_RankBoost_Redirects::guess( $path ) ); }
+		elseif ( $code >= 300 && $code < 400 ) {
 			$to = (string) wp_remote_retrieve_header( $res, 'location' );
-			if ( '' !== $to && Sidcraft_RankBoost_Redirects::normalize( $to ) !== $path && self::is_internal( $to ) ) { return array( 'redirected', $to ); }
+			if ( '' !== $to && Sidcraft_RankBoost_Redirects::normalize( $to ) !== $path && self::is_internal( $to ) ) { $out = array( 'redirected', $to ); }
 		}
-		return null;
+		set_transient( $lk, $out, 6 * HOUR_IN_SECONDS );
+		return $out ? $out : null;
 	}
 
 	private static function check_external( $url ) {
@@ -118,7 +129,8 @@ class Sidcraft_RankBoost_Links {
 		return is_array( $i ) ? $i : array();
 	}
 
-	private static function save_items( $items ) { update_option( self::ITEMS, $items, false ); }
+	/** The list is kept small: a huge serialized option is read and rewritten on every step. */
+	private static function save_items( $items ) { update_option( self::ITEMS, array_slice( $items, 0, 1500, true ), false ); }
 
 	public static function item_id( $post_id, $url ) { return md5( (int) $post_id . '|' . $url ); }
 
@@ -183,7 +195,7 @@ class Sidcraft_RankBoost_Links {
 				$post = get_post( (int) $id );
 				$complete = true;
 				if ( $post ) {
-					$st['links'] += self::scan_post( $post, $items, $ext, $deadline + 15, $complete );
+					$st['links'] += self::scan_post( $post, $items, $ext, $deadline + 4, $complete );
 					if ( ! $complete ) { break 2; } // out of time mid-page: pick this page up again next round.
 					++$st['posts'];
 				}
@@ -198,7 +210,12 @@ class Sidcraft_RankBoost_Links {
 
 	public static function event() {
 		if ( Sidcraft_RankBoost_Audit::busy() ) { wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, self::EVENT ); return; }
-		if ( self::batch( 8 ) ) { wp_schedule_single_event( time() + 2 * MINUTE_IN_SECONDS, self::EVENT ); }
+		// Never two scan steps at once (WP-Cron can start a second run while the first is still going).
+		if ( get_transient( 'sidcraft_rankboost_links_lock' ) ) { return; }
+		set_transient( 'sidcraft_rankboost_links_lock', 1, 2 * MINUTE_IN_SECONDS );
+		$more = self::batch( 5 );
+		delete_transient( 'sidcraft_rankboost_links_lock' );
+		if ( $more ) { wp_schedule_single_event( time() + 5 * MINUTE_IN_SECONDS, self::EVENT ); }
 	}
 
 	public static function daily() {

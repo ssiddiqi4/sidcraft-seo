@@ -66,9 +66,8 @@ class Sidcraft_VS_Tracker {
 		$status = ! empty( $p['n'] ) ? 404 : 200;
 
 		$visitor = self::visitor( $ip, $ua );
-		$cap = 'svs_c_' . substr( $visitor, 0, 12 ); $n = (int) get_transient( $cap );
-		if ( $n >= 300 ) { return $none; }
-		set_transient( $cap, $n + 1, HOUR_IN_SECONDS );
+		// Flood guard: at most 300 views per visitor per day. One indexed COUNT and no option rows (a transient per visitor filled wp_options and slowed the whole site over time).
+		if ( Sidcraft_VS_DB::views_today( $visitor ) >= 300 ) { return $none; }
 
 		// Where the visitor came from.
 		$host = ''; $src = 'direct'; $camp = '';

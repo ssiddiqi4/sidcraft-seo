@@ -148,6 +148,7 @@ No. See "External services" for the one optional request the plugin makes (Index
 == Changelog ==
 
 = 2.0.0 =
+* Performance: fixed the admin slowing down after the plugin had been active for a while. Background scans (broken links, audit, cache preload) no longer overlap, take turns with a lock, wait while the server is busy, and cap their own loopback requests. Visitor Stats no longer stores one transient per visitor in the options table (old ones are cleaned up daily), and the dashboard widget is cached.
 * Renamed to **Sidcraft RankBoost** (slug `sidcraft-rankboost`) and new text domain `sidcraft-rankboost`.
 * Review fix: the plugin no longer forces indexing or sitemaps on. It respects Settings > Reading > "Discourage search engines from indexing this site", and it no longer removes a noindex rule added by WordPress or another plugin.
 * Review fix: sitemap links now use `get_sitemap_url( 'index' )` instead of a fixed `/wp-sitemap.xml` path, so they work on subdirectory installs and sites without pretty permalinks.

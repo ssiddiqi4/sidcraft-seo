@@ -273,14 +273,17 @@ class Sidcraft_RankBoost_Audit {
 
 	public static function batch_event() {
 		if ( self::busy() ) { wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, 'sidcraft_rankboost_audit_more' ); return; }
-		self::more( self::batch( 10, 10 ) );
+		if ( get_transient( 'sidcraft_rankboost_audit_lock' ) ) { return; }
+		set_transient( 'sidcraft_rankboost_audit_lock', 1, 2 * MINUTE_IN_SECONDS );
+		self::more( self::batch( 10, 8 ) );
+		delete_transient( 'sidcraft_rankboost_audit_lock' );
 	}
 
 	/** After a batch: plan the next one a few minutes on, and refresh the dashboard numbers only now and then. */
 	private static function more( $left ) {
 		if ( $left > 0 ) {
-			if ( ! wp_next_scheduled( 'sidcraft_rankboost_audit_more' ) ) { wp_schedule_single_event( time() + 3 * MINUTE_IN_SECONDS, 'sidcraft_rankboost_audit_more' ); }
-			if ( ! get_transient( 'sidcraft_rankboost_summary_lock' ) ) { set_transient( 'sidcraft_rankboost_summary_lock', 1, 15 * MINUTE_IN_SECONDS ); self::summary( true ); }
+			if ( ! wp_next_scheduled( 'sidcraft_rankboost_audit_more' ) ) { wp_schedule_single_event( time() + 5 * MINUTE_IN_SECONDS, 'sidcraft_rankboost_audit_more' ); }
+			if ( ! get_transient( 'sidcraft_rankboost_summary_lock' ) ) { set_transient( 'sidcraft_rankboost_summary_lock', 1, 30 * MINUTE_IN_SECONDS ); self::summary( true ); }
 			return;
 		}
 		self::summary( true );

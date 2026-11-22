@@ -178,8 +178,15 @@ class Sidcraft_VS_Admin {
 
 	public static function widget() {
 		$to = wp_date( 'Y-m-d' ); $from = wp_date( 'Y-m-d', time() - 6 * DAY_IN_SECONDS );
-		$s = Sidcraft_VS_DB::summary( $from, $to ); $series = Sidcraft_VS_DB::series( $from, $to ); $max = 1; foreach ( $series as $r ) { $max = max( $max, $r['p'] ); }
-		echo '<div class="svs-widget"><p><strong style="font-size:22px">' . esc_html( number_format_i18n( $s['visitors'] ) ) . '</strong> ' . esc_html__( 'visitors', 'sidcraft-rankboost' ) . ' &nbsp; <strong style="font-size:22px">' . esc_html( number_format_i18n( $s['views'] ) ) . '</strong> ' . esc_html__( 'page views', 'sidcraft-rankboost' ) . ' &nbsp; <span style="color:#2271b1">' . esc_html( sprintf( /* translators: %d: visitors */ __( '%d online now', 'sidcraft-rankboost' ), Sidcraft_VS_DB::online() ) ) . '</span></p>';
+		// Cached for two minutes so opening the dashboard does not run the statistics queries every time.
+		$w = get_transient( 'sidcraft_vs_widget' );
+		if ( ! is_array( $w ) || ( $w['to'] ?? '' ) !== $to ) {
+			$ser = Sidcraft_VS_DB::series( $from, $to ); $tv = 0; $tp = 0; foreach ( $ser as $r ) { $tv += $r['v']; $tp += $r['p']; }
+			$w = array( 'to' => $to, 'series' => $ser, 'visitors' => $tv, 'views' => $tp, 'online' => Sidcraft_VS_DB::online() );
+			set_transient( 'sidcraft_vs_widget', $w, 2 * MINUTE_IN_SECONDS );
+		}
+		$series = $w['series']; $s = array( 'visitors' => $w['visitors'], 'views' => $w['views'] ); $max = 1; foreach ( $series as $r ) { $max = max( $max, $r['p'] ); }
+		echo '<div class="svs-widget"><p><strong style="font-size:22px">' . esc_html( number_format_i18n( $s['visitors'] ) ) . '</strong> ' . esc_html__( 'visitors', 'sidcraft-rankboost' ) . ' &nbsp; <strong style="font-size:22px">' . esc_html( number_format_i18n( $s['views'] ) ) . '</strong> ' . esc_html__( 'page views', 'sidcraft-rankboost' ) . ' &nbsp; <span style="color:#2271b1">' . esc_html( sprintf( /* translators: %d: visitors */ __( '%d online now', 'sidcraft-rankboost' ), $w['online'] ) ) . '</span></p>';
 		echo '<div style="display:flex;align-items:flex-end;gap:4px;height:60px">';
 		foreach ( $series as $r ) { echo '<div title="' . esc_attr( $r['d'] . ': ' . $r['p'] ) . '" style="flex:1;background:#2271b1;opacity:.85;border-radius:2px 2px 0 0;height:' . esc_attr( max( 2, (int) round( 100 * $r['p'] / $max ) ) ) . '%"></div>'; }
 		echo '</div><p><a href="' . esc_url( admin_url( 'admin.php?page=sidcraft-vs' ) ) . '">' . esc_html__( 'Open the full statistics →', 'sidcraft-rankboost' ) . '</a></p></div>';

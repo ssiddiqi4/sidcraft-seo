@@ -52,14 +52,22 @@ class Sidcraft_VS_DB {
 		return $ok ? (int) $wpdb->insert_id : 0;
 	}
 
+	/** Views already stored today for one visitor id (uses the day+visitor index). */
+	public static function views_today( $visitor ) {
+		global $wpdb; $t = self::table();
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE day = %s AND visitor = %s', $t, wp_date( 'Y-m-d' ), $visitor ) );
+	}
+
 	public static function set_duration( $id, $seconds ) {
 		global $wpdb; $t = self::table();
 		return $wpdb->query( $wpdb->prepare( "UPDATE %i SET duration = %d WHERE id = %d AND duration < %d", $t, $seconds, $id, $seconds ) );
 	}
 
 	public static function purge( $days ) {
-		if ( $days < 1 ) { return 0; }
 		global $wpdb; $t = self::table();
+		// Older versions stored one transient per visitor; remove what they left in wp_options.
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s", $wpdb->esc_like( '_transient_svs_c_' ) . '%', $wpdb->esc_like( '_transient_timeout_svs_c_' ) . '%' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- one-off housekeeping of this plugin's own rows.
+		if ( $days < 1 ) { return 0; }
 		return (int) $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE day < %s", $t, wp_date( 'Y-m-d', time() - $days * DAY_IN_SECONDS ) ) );
 	}
 
