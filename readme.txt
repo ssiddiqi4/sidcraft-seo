@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.3
+Stable tag: 2.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -146,6 +146,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 8. Settings: every automatic feature has an on/off switch.
 
 == Changelog ==
+
+= 2.0.4 =
+* Fix: PHP notices written to the error log on every request to an unusual address (a missing page, a bot probe, a URL with a second https:// in it). The page address used for the social tags is now built from the request path only, without the query string.
 
 = 2.0.3 =
 * Fix: "The statistics could not be loaded" in Visitor Stats. If a request failed once (for example a Cloudflare 520 or a busy server), the page gave up for good. It now retries by itself (4, 8 and 12 seconds, then every minute), keeps the numbers already on screen, and shows the reason, such as HTTP 520, with a Try again link (or Reload this page if your login session ended).
@@ -290,6 +293,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 2.0.4 =
+Stops PHP notices in the error log on unusual page addresses.
 
 = 2.0.3 =
 Visitor Stats recovers by itself from a failed load and puts less load on the server.

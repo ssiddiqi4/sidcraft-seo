@@ -132,7 +132,12 @@ class Sidcraft_RankBoost_Meta {
 			$c['title'] = self::with_suffix( wp_strip_all_tags( get_the_archive_title() ) );
 			$c['noindex'] = true;
 		}
-		if ( '' === $c['url'] ) { $c['url'] = home_url( add_query_arg( null, null ) ); }
+		if ( '' === $c['url'] ) {
+			// Path of the current request without the query string. (add_query_arg( null, null ) raised PHP notices on odd request URIs.)
+			$uri  = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '/'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only the path is used, then escaped on output.
+			$path = wp_parse_url( $uri, PHP_URL_PATH );
+			$c['url'] = home_url( is_string( $path ) && '' !== $path ? $path : '/' );
+		}
 		return apply_filters( 'sidcraft_rankboost_current', $c );
 	}
 
