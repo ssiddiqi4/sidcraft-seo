@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.4
+Stable tag: 2.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -146,6 +146,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 8. Settings: every automatic feature has an on/off switch.
 
 == Changelog ==
+
+= 2.0.5 =
+* Fix: the Block, Unblock and Check buttons next to an address on the Broken URLs tab disappeared after Sidcraft Bot Shield was renamed. Sidcraft RankBoost now works with Sidcraft BotVanguard (the new name of the plugin), and still with the earlier names.
 
 = 2.0.4 =
 * Fix: PHP notices written to the error log on every request to an unusual address (a missing page, a bot probe, a URL with a second https:// in it). The page address used for the social tags is now built from the request path only, without the query string.
@@ -293,6 +296,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 2.0.5 =
+Bring back Block / Unblock for visitor addresses now that the plugin is called Sidcraft BotVanguard.
 
 = 2.0.4 =
 Stops PHP notices in the error log on unusual page addresses.

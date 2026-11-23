@@ -354,7 +354,7 @@ class Sidcraft_RankBoost_Admin {
 		return array( '', $host );
 	}
 
-	/** The addresses that asked for a missing URL, each with Check, and Block or Unblock for Sidcraft Bot Shield (they work in place, without reloading the page). */
+	/** The addresses that asked for a missing URL, each with Check, and Block or Unblock for Sidcraft BotVanguard (they work in place, without reloading the page). */
 	private static function ip_cell( $r ) {
 		$ips = isset( $r->ips ) && '' !== $r->ips ? explode( ',', $r->ips ) : array();
 		if ( ! $ips ) { return '<span class="description">' . esc_html__( 'not recorded', 'sidcraft-rankboost' ) . '</span>'; }
@@ -384,20 +384,27 @@ class Sidcraft_RankBoost_Admin {
 			/* translators: %s: IP address */
 			return sprintf( __( '%s has no host name, so it is not a search engine crawler. Search engines can always be traced back to their own servers.', 'sidcraft-rankboost' ), $ip );
 		}
-		if ( ! class_exists( 'Sidcraft_BotShield_Settings' ) ) { return __( 'Install and activate Sidcraft Bot Shield to block or unblock addresses.', 'sidcraft-rankboost' ); }
+		$S = self::bv( 'Settings' ); $R = self::bv( 'Ranges' ); $B = self::bv( 'Bans' );
+		if ( '' === $S ) { return __( 'Install and activate Sidcraft BotVanguard to block or unblock addresses.', 'sidcraft-rankboost' ); }
 		if ( 'url_unblock_ip' === $do ) {
-			Sidcraft_BotShield_Settings::remove_line( 'ip_block', $ip );
-			if ( class_exists( 'Sidcraft_BotShield_Bans' ) ) { Sidcraft_BotShield_Bans::remove( $ip ); }
-			$still = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
+			$S::remove_line( 'ip_block', $ip );
+			if ( '' !== $B ) { $B::remove( $ip ); }
+			$still = '' !== $R && $R::in_list( $ip, $S::lines( 'ip_block' ) );
 			/* translators: %s: IP address */
-			return $still ? sprintf( __( '%s was removed from the list by itself, but a range on the Sidcraft Bot Shield block list still covers it. Edit that range in Settings → Bot Shield.', 'sidcraft-rankboost' ), $ip ) : sprintf( __( '%s is unblocked.', 'sidcraft-rankboost' ), $ip );
+			return $still ? sprintf( __( '%s was removed from the list by itself, but a range on the Sidcraft BotVanguard block list still covers it. Edit that range in the Sidcraft BotVanguard menu.', 'sidcraft-rankboost' ), $ip ) : sprintf( __( '%s is unblocked.', 'sidcraft-rankboost' ), $ip );
 		}
-		if ( method_exists( 'Sidcraft_BotShield_Settings', 'is_allowed_ip' ) && Sidcraft_BotShield_Settings::is_allowed_ip( $ip ) ) { /* translators: %s: IP address */ return sprintf( __( '%s is on the Sidcraft Bot Shield never-block list, so it was not blocked. Remove it from that list first if you really want to block it.', 'sidcraft-rankboost' ), $ip ); }
+		if ( method_exists( $S, 'is_allowed_ip' ) && $S::is_allowed_ip( $ip ) ) { /* translators: %s: IP address */ return sprintf( __( '%s is on the Sidcraft BotVanguard never-block list, so it was not blocked. Remove it from that list first if you really want to block it.', 'sidcraft-rankboost' ), $ip ); }
 		if ( $engine ) { /* translators: 1: IP address 2: company */ return sprintf( __( '%1$s is a genuine %2$s crawler, so it was not blocked. Blocking it would remove your pages from search results.', 'sidcraft-rankboost' ), $ip, $engine ); }
-		if ( false === Sidcraft_BotShield_Settings::add_line( 'ip_block', $ip ) ) { /* translators: %s: IP address */ return sprintf( __( '%s could not be added to the block list.', 'sidcraft-rankboost' ), $ip ); }
-		$ok = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
+		if ( false === $S::add_line( 'ip_block', $ip ) ) { /* translators: %s: IP address */ return sprintf( __( '%s could not be added to the block list.', 'sidcraft-rankboost' ), $ip ); }
+		$ok = '' !== $R && $R::in_list( $ip, $S::lines( 'ip_block' ) );
 		/* translators: %s: IP address */
-		return $ok ? sprintf( __( '%s is now on the Sidcraft Bot Shield block list. You can unblock it here at any time.', 'sidcraft-rankboost' ), $ip ) : sprintf( __( '%s was saved but Sidcraft Bot Shield does not report it as blocked. Check Settings → Bot Shield.', 'sidcraft-rankboost' ), $ip );
+		return $ok ? sprintf( __( '%s is now on the Sidcraft BotVanguard block list. You can unblock it here at any time.', 'sidcraft-rankboost' ), $ip ) : sprintf( __( '%s was saved but Sidcraft BotVanguard does not report it as blocked. Check the Sidcraft BotVanguard menu.', 'sidcraft-rankboost' ), $ip );
+	}
+
+	/** The class of the Sidcraft BotVanguard plugin for a part (Settings, Ranges, Bans, Guard), or '' when it is not active. The earlier names (BotVaguard, Sidcraft Bot Shield) still work. */
+	public static function bv( $part ) {
+		foreach ( array( 'Botvanguard_', 'Botvaguard_', 'Sidcraft_BotShield_' ) as $prefix ) { if ( class_exists( $prefix . $part, false ) ) { return $prefix . $part; } }
+		return '';
 	}
 
 	/** In-page Check / Block / Unblock: answers without reloading the page, so the result appears next to the button. */
@@ -416,12 +423,13 @@ class Sidcraft_RankBoost_Admin {
 	/** Check, and Block or Unblock, for one address (the part of the cell that changes). */
 	private static function ip_controls( $ip ) {
 		$out = '<button type="button" class="button-link sidcraft-ip-act" data-do="url_check_ip" data-ip="' . esc_attr( $ip ) . '">' . esc_html__( 'Check', 'sidcraft-rankboost' ) . '</button>';
-		if ( ! class_exists( 'Sidcraft_BotShield_Settings' ) ) { return $out; }
-		$blocked = class_exists( 'Sidcraft_BotShield_Ranges' ) && Sidcraft_BotShield_Ranges::in_list( $ip, Sidcraft_BotShield_Settings::lines( 'ip_block' ) );
-		$safe    = method_exists( 'Sidcraft_BotShield_Settings', 'is_allowed_ip' ) && Sidcraft_BotShield_Settings::is_allowed_ip( $ip );
+		$S = self::bv( 'Settings' ); $R = self::bv( 'Ranges' );
+		if ( '' === $S ) { return $out; }
+		$blocked = '' !== $R && $R::in_list( $ip, $S::lines( 'ip_block' ) );
+		$safe    = method_exists( $S, 'is_allowed_ip' ) && $S::is_allowed_ip( $ip );
 		if ( $safe && ! $blocked ) { return $out . ' <em>' . esc_html__( 'never blocked', 'sidcraft-rankboost' ) . '</em>'; }
 		if ( $blocked ) { return $out . ' <em>' . esc_html__( 'blocked', 'sidcraft-rankboost' ) . '</em> <button type="button" class="button-link sidcraft-ip-act" data-do="url_unblock_ip" data-ip="' . esc_attr( $ip ) . '">' . esc_html__( 'Unblock', 'sidcraft-rankboost' ) . '</button>'; }
-		return $out . ' <button type="button" class="button-link sidcraft-ip-act" data-do="url_block_ip" data-ip="' . esc_attr( $ip ) . '" data-confirm="' . esc_attr__( 'Block this address for good in Sidcraft Bot Shield?', 'sidcraft-rankboost' ) . '">' . esc_html__( 'Block', 'sidcraft-rankboost' ) . '</button>';
+		return $out . ' <button type="button" class="button-link sidcraft-ip-act" data-do="url_block_ip" data-ip="' . esc_attr( $ip ) . '" data-confirm="' . esc_attr__( 'Block this address for good in Sidcraft BotVanguard?', 'sidcraft-rankboost' ) . '">' . esc_html__( 'Block', 'sidcraft-rankboost' ) . '</button>';
 	}
 
 	/** Groups of broken addresses that share a first folder (like /itm/) and the folders already answered with 410 Gone. */

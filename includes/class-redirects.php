@@ -158,9 +158,10 @@ class Sidcraft_RankBoost_Redirects {
 		) );
 	}
 
-	/** The address of the visitor. Uses Sidcraft Bot Shield's setting for proxies and Cloudflare when that plugin is active. */
+	/** The address of the visitor. Uses Sidcraft BotVanguard's setting for proxies and Cloudflare when that plugin is active. */
 	public static function visitor_ip() {
-		if ( class_exists( 'Sidcraft_BotShield_Guard' ) ) { return (string) Sidcraft_BotShield_Guard::client_ip(); }
+		$G = Sidcraft_RankBoost_Admin::bv( 'Guard' );
+		if ( '' !== $G ) { return (string) $G::client_ip(); }
 		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '';
 	}
