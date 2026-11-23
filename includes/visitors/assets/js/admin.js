@@ -120,13 +120,36 @@
 		app.appendChild(g);
 	}
 
-	function load() {
-		var q = new URLSearchParams({ action: 'sidcraft_vs_data', nonce: C.nonce, from: range.from, to: range.to });
-		fetch(C.ajax + '?' + q.toString(), { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
-			if (!j || !j.success) { throw new Error('x'); }
-			range = { from: j.data.from, to: j.data.to }; render(j.data);
-			clearTimeout(timer); if (range.to >= C.today) { timer = setTimeout(load, 60000); }
-		}).catch(function () { app.textContent = ''; app.appendChild(el('div', 'notice notice-error inline', T.error)); });
+	var hasData = false;
+	function fail(why, attempt) {
+		clearTimeout(timer);
+		var session = why === 'HTTP 403' || why === 'HTTP 400';
+		// A short hiccup (busy server, dropped connection): quietly try again a few times.
+		if (!session && attempt < 3) { timer = setTimeout(function () { load(attempt + 1); }, 4000 * (attempt + 1)); return; }
+		var box = el('div', 'notice notice-error inline', '');
+		var p = el('p', '', T.error + ' (' + why + ') ');
+		var a = el('a', '', session ? T.reload : T.retry); a.href = '#';
+		a.addEventListener('click', function (e) { e.preventDefault(); if (session) { window.location.reload(); } else { load(0); } });
+		p.appendChild(a); box.appendChild(p);
+		if (!hasData) { app.textContent = ''; }
+		else { var old = app.querySelector('.svs-load-error'); if (old) { old.remove(); } box.className += ' svs-load-error'; }
+		app.insertBefore(box, app.firstChild);
+		// Keep trying in the background so the page recovers by itself.
+		if (!session) { timer = setTimeout(function () { load(0); }, 60000); }
 	}
-	range = { from: addDays(C.today, -6), to: C.today }; load();
+	function load(attempt) {
+		attempt = attempt || 0;
+		var q = new URLSearchParams({ action: 'sidcraft_vs_data', nonce: C.nonce, from: range.from, to: range.to });
+		fetch(C.ajax + '?' + q.toString(), { credentials: 'same-origin' }).then(function (r) {
+			if (!r.ok) { throw new Error('HTTP ' + r.status); }
+			return r.text();
+		}).then(function (t) {
+			var j; try { j = JSON.parse(t); } catch (e) { throw new Error('not JSON'); }
+			if (!j || !j.success) { throw new Error('no data'); }
+			hasData = true;
+			range = { from: j.data.from, to: j.data.to }; app.textContent = ''; render(j.data);
+			clearTimeout(timer); if (range.to >= C.today) { timer = setTimeout(function () { load(0); }, 60000); }
+		}).catch(function (e) { fail(e && e.message ? e.message : 'error', attempt); });
+	}
+	range = { from: addDays(C.today, -6), to: C.today }; load(0);
 })();

@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,10 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 2.0.3 =
+* Fix: "The statistics could not be loaded" in Visitor Stats. If a request failed once (for example a Cloudflare 520 or a busy server), the page gave up for good. It now retries by itself (4, 8 and 12 seconds, then every minute), keeps the numbers already on screen, and shows the reason, such as HTTP 520, with a Try again link (or Reload this page if your login session ended).
+* Performance: the report asks for more memory and time on busy servers, and keeps past date ranges cached for 15 minutes (the current range for 2 minutes), so it runs fewer database queries.
+
 = 2.0.2 =
 * Fix: minified CSS and JavaScript files are now linked with the same https:// scheme as the original file. On some sites the uploads folder was configured with http://, so the browser blocked the minified scripts as insecure (mixed) content and features that depend on them, such as the Sidcraft Page Builder menu and menu anchor scripts, stopped working. Query Monitor listed them as "Insecure content".
 
@@ -286,6 +290,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 2.0.3 =
+Visitor Stats recovers by itself from a failed load and puts less load on the server.
 
 = 2.0.2 =
 Fixes minified scripts being blocked as insecure content on https sites. Recommended.

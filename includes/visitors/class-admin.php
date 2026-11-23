@@ -41,7 +41,7 @@ class Sidcraft_VS_Admin {
 				'apply' => __( 'Apply', 'sidcraft-rankboost' ), 'none' => __( 'No data for this period yet.', 'sidcraft-rankboost' ), 'pages' => __( 'Top pages', 'sidcraft-rankboost' ), 'sources' => __( 'Traffic sources', 'sidcraft-rankboost' ),
 				'referrers' => __( 'Referring websites', 'sidcraft-rankboost' ), 'campaigns' => __( 'Campaigns', 'sidcraft-rankboost' ), 'countries' => __( 'Countries', 'sidcraft-rankboost' ), 'browsers' => __( 'Browsers', 'sidcraft-rankboost' ),
 				'os' => __( 'Operating systems', 'sidcraft-rankboost' ), 'devices' => __( 'Devices', 'sidcraft-rankboost' ), 'hours' => __( 'Busiest hours (site time)', 'sidcraft-rankboost' ), 'notfound' => __( 'Pages not found (404)', 'sidcraft-rankboost' ),
-				'vs' => __( 'vs previous period', 'sidcraft-rankboost' ), 'export' => __( 'Download CSV', 'sidcraft-rankboost' ), 'bots' => __( 'robot visits ignored', 'sidcraft-rankboost' ), 'error' => __( 'The statistics could not be loaded.', 'sidcraft-rankboost' ),
+				'retry' => __( 'Try again', 'sidcraft-rankboost' ), 'reload' => __( 'Reload this page', 'sidcraft-rankboost' ), 'vs' => __( 'vs previous period', 'sidcraft-rankboost' ), 'export' => __( 'Download CSV', 'sidcraft-rankboost' ), 'bots' => __( 'robot visits ignored', 'sidcraft-rankboost' ), 'error' => __( 'The statistics could not be loaded.', 'sidcraft-rankboost' ),
 				'unknown' => __( 'Unknown', 'sidcraft-rankboost' ), 'direct' => __( 'Direct', 'sidcraft-rankboost' ), 'search' => __( 'Search engines', 'sidcraft-rankboost' ), 'social' => __( 'Social media', 'sidcraft-rankboost' ), 'referral' => __( 'Other websites', 'sidcraft-rankboost' ), 'campaign' => __( 'Campaigns', 'sidcraft-rankboost' ),
 				'mobile' => __( 'Mobile', 'sidcraft-rankboost' ), 'desktop' => __( 'Desktop', 'sidcraft-rankboost' ), 'tablet' => __( 'Tablet', 'sidcraft-rankboost' ),
 				'colviews' => __( 'Views', 'sidcraft-rankboost' ), 'colvisitors' => __( 'Visitors', 'sidcraft-rankboost' ),
@@ -69,6 +69,9 @@ class Sidcraft_VS_Admin {
 	public static function ajax_data() {
 		check_ajax_referer( 'sidcraft_vs_data', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( null, 403 ); }
+		// This report runs about a dozen queries: give it room, so a busy server does not cut it off halfway.
+		if ( function_exists( 'wp_raise_memory_limit' ) ) { wp_raise_memory_limit( 'admin' ); }
+		if ( function_exists( 'set_time_limit' ) ) { @set_time_limit( 60 ); } // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- hosts may disable it.
 		list( $from, $to ) = self::range();
 		$days = (int) round( ( strtotime( $to ) - strtotime( $from ) ) / DAY_IN_SECONDS ) + 1;
 		$pf = gmdate( 'Y-m-d', strtotime( $from ) - $days * DAY_IN_SECONDS ); $pt = gmdate( 'Y-m-d', strtotime( $from ) - DAY_IN_SECONDS );
@@ -84,7 +87,7 @@ class Sidcraft_VS_Admin {
 				'os' => Sidcraft_VS_DB::top( 'os', $from, $to, 8 ), 'devices' => Sidcraft_VS_DB::top( 'device', $from, $to, 4 ), 'notfound' => Sidcraft_VS_DB::not_found( $from, $to, 8 ),
 				'bots' => $o['track_bots'] ? Sidcraft_VS_DB::bots( $from, $to ) : null,
 			);
-			set_transient( $key, $data, MINUTE_IN_SECONDS );
+			set_transient( $key, $data, $to >= wp_date( 'Y-m-d' ) ? 2 * MINUTE_IN_SECONDS : 15 * MINUTE_IN_SECONDS ); // Past ranges never change, so keep them longer.
 		}
 		$data['online'] = Sidcraft_VS_DB::online();
 		wp_send_json_success( $data );
