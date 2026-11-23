@@ -71,7 +71,6 @@ class Sidcraft_VS_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( null, 403 ); }
 		// This report runs about a dozen queries: give it room, so a busy server does not cut it off halfway.
 		if ( function_exists( 'wp_raise_memory_limit' ) ) { wp_raise_memory_limit( 'admin' ); }
-		if ( function_exists( 'set_time_limit' ) ) { @set_time_limit( 60 ); } // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- hosts may disable it.
 		list( $from, $to ) = self::range();
 		$days = (int) round( ( strtotime( $to ) - strtotime( $from ) ) / DAY_IN_SECONDS ) + 1;
 		$pf = gmdate( 'Y-m-d', strtotime( $from ) - $days * DAY_IN_SECONDS ); $pt = gmdate( 'Y-m-d', strtotime( $from ) - DAY_IN_SECONDS );

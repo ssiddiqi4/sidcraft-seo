@@ -12,17 +12,26 @@
 
 // phpcs:disable WordPress.Security.NonceVerification, WordPress.WP.AlternativeFunctions, WordPress.Security.ValidatedSanitizedInput -- Public counting endpoint: it only stores anonymous page views and every value is sanitised in the tracker class.
 
-if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
-	http_response_code( 405 );
-	exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	// A direct request to this file is how the counting script reaches it. Start only the WordPress core (SHORTINIT), nothing else.
+	if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
+		http_response_code( 405 );
+		exit;
+	}
+	$sidcraft_vs_root = dirname( __FILE__, 6 );
+	if ( ! is_file( $sidcraft_vs_root . '/wp-load.php' ) ) {
+		http_response_code( 404 );
+		exit;
+	}
+	define( 'SHORTINIT', true );
+	require $sidcraft_vs_root . '/wp-load.php';
 }
-$sidcraft_vs_root = dirname( __FILE__, 6 );
-if ( ! is_file( $sidcraft_vs_root . '/wp-load.php' ) ) {
-	http_response_code( 404 );
-	exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // WordPress could not be started.
 }
-define( 'SHORTINIT', true );
-require $sidcraft_vs_root . '/wp-load.php';
+if ( ! defined( 'SHORTINIT' ) || ! SHORTINIT ) {
+	exit; // This file only ever runs as the lightweight endpoint.
+}
 
 $sidcraft_vs_main = basename( dirname( __FILE__, 3 ) ) . '/sidcraft-rankboost.php';
 $sidcraft_vs_on   = (array) get_option( 'active_plugins', array() );
@@ -32,6 +41,7 @@ if ( ! in_array( $sidcraft_vs_main, $sidcraft_vs_on, true ) ) {
 }
 
 require_once ABSPATH . WPINC . '/kses.php'; // esc_url_raw() needs it.
+require_once ABSPATH . WPINC . '/http.php'; // wp_parse_url().
 define( 'SIDCRAFT_VS_VERSION', '0' );
 require_once __DIR__ . '/class-settings.php';
 require_once __DIR__ . '/class-db.php';

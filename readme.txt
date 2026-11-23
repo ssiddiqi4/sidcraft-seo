@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.5
+Stable tag: 2.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -160,6 +160,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 2.0.6 =
+* Plugin Check clean-up: the lightweight Visitor Stats endpoint now uses wp_parse_url() and guards direct access in the way WordPress.org expects, and the report no longer asks for extra execution time.
+
 = 2.0.5 =
 * Fix: the Block, Unblock and Check buttons next to an address on the Broken URLs tab disappeared after Sidcraft Bot Shield was renamed. Sidcraft RankBoost now works with Sidcraft BotVanguard (the new name of the plugin), and still with the earlier names.
 
@@ -309,6 +312,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 2.0.6 =
+Small code clean-up from the WordPress.org Plugin Check. No change to how the plugin works.
 
 = 2.0.5 =
 Bring back Block / Unblock for visitor addresses now that the plugin is called Sidcraft BotVanguard.

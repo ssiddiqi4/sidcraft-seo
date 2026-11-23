@@ -50,7 +50,7 @@ class Sidcraft_VS_Tracker {
 	private static function sign( $id ) { return substr( hash_hmac( 'sha256', 'svs' . (int) $id, ( defined( 'AUTH_KEY' ) ? AUTH_KEY : '' ) . ( defined( 'AUTH_SALT' ) ? AUTH_SALT : '' ) . get_option( 'sidcraft_vs_salt', '' ) ), 0, 20 ); }
 
 	/** The site's own host without www, read from the option (home_url() is not loaded in the lightweight endpoint). */
-	private static function own_host() { return preg_replace( '/^www\./', '', strtolower( (string) parse_url( (string) get_option( 'home' ), PHP_URL_HOST ) ) ); }
+	private static function own_host() { return preg_replace( '/^www\./', '', strtolower( (string) wp_parse_url( (string) get_option( 'home' ), PHP_URL_HOST ) ) ); }
 
 	public static function hit( WP_REST_Request $req ) {
 		$p = $req->get_json_params(); if ( ! is_array( $p ) ) { $p = $req->get_body_params(); }
@@ -81,7 +81,7 @@ class Sidcraft_VS_Tracker {
 		// Where the visitor came from.
 		$host = ''; $src = 'direct'; $camp = '';
 		$ref  = isset( $p['r'] ) ? esc_url_raw( (string) $p['r'] ) : '';
-		if ( '' !== $ref ) { $h = parse_url( $ref, PHP_URL_HOST ); $host = $h ? preg_replace( '/^www\./', '', strtolower( $h ) ) : ''; }
+		if ( '' !== $ref ) { $h = wp_parse_url( $ref, PHP_URL_HOST ); $host = $h ? preg_replace( '/^www\./', '', strtolower( $h ) ) : ''; }
 		$own = self::own_host();
 		if ( '' !== $host && $host === $own ) { $src = 'internal'; $host = ''; }
 		elseif ( '' !== $host ) { $src = Sidcraft_VS_UA::source_of( $host ); }
