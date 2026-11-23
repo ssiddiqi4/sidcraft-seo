@@ -336,7 +336,7 @@ class Sidcraft_RankBoost_Admin {
 	}
 
 	/** Does this address really belong to a search engine? Returns array( company or '', host name or '' ). Checks the name both ways, so it cannot be faked. */
-	private static function search_engine( $ip ) {
+	public static function search_engine( $ip ) {
 		$host = apply_filters( 'sidcraft_rankboost_rdns', null, $ip );
 		if ( null === $host ) { $host = @gethostbyaddr( $ip ); } // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a failed lookup is a normal outcome.
 		if ( ! is_string( $host ) || '' === $host || $host === $ip ) { return array( '', '' ); }
@@ -540,6 +540,7 @@ class Sidcraft_RankBoost_Admin {
 			'sitemap'      => __( 'Improve the XML sitemap (dates, hide noindex pages)', 'sidcraft-rankboost' ),
 			'auto_redirects' => __( 'Create 301 redirects automatically when a page address changes', 'sidcraft-rankboost' ),
 			'fuzzy_404'    => __( 'Repair near-miss broken URLs by redirecting to the closest page', 'sidcraft-rankboost' ),
+			'junk_block'   => __( 'Block for good an address that asks for a junk path such as /-/-/-/-/-/-/ (Block needs Sidcraft BotVanguard)', 'sidcraft-rankboost' ),
 			'auto_alt'     => __( 'Write image alt text automatically', 'sidcraft-rankboost' ),
 			'related_links' => __( 'Add a short “You may also like” list to posts that link to no other page', 'sidcraft-rankboost' ),
 			'check_external' => __( 'Broken-link scan also checks links to other websites (sends a request to each linked site)', 'sidcraft-rankboost' ),
@@ -558,6 +559,10 @@ class Sidcraft_RankBoost_Admin {
 		foreach ( $boxes as $k => $label ) {
 			printf( '<tr><th scope="row">%s</th><td><label><input type="checkbox" name="%s[%s]" value="1" %s> On</label></td></tr>', esc_html( $label ), esc_attr( Sidcraft_RankBoost_Settings::OPTION ), esc_attr( $k ), checked( ! empty( $o[ $k ] ), true, false ) );
 		}
+		$jr = Sidcraft_RankBoost_Redirects::recent_junk();
+		echo '<tr><th scope="row">' . esc_html__( 'Junk paths: more patterns', 'sidcraft-rankboost' ) . '</th><td><textarea name="' . esc_attr( Sidcraft_RankBoost_Settings::OPTION ) . '[junk_extra]" rows="4" class="large-text code">' . esc_textarea( $o['junk_extra'] ) . '</textarea><p class="description">' . esc_html__( 'One per line, at least 4 characters. A visitor whose address (or search words) contains a line is treated like the built-in junk pattern: a path made only of slashes and dashes, such as /-/-/-/-/-/-/. Case does not matter.', 'sidcraft-rankboost' ) . '</p><p class="description">' . esc_html__( 'Genuine search engine crawlers, addresses on the BotVanguard never-block list, and logged-in users are never blocked. Without Sidcraft BotVanguard the request is refused but the address cannot be blocked for good.', 'sidcraft-rankboost' ) . '</p>';
+		if ( $jr ) { echo '<p><strong>' . esc_html__( 'Blocked by this rule recently:', 'sidcraft-rankboost' ) . '</strong></p><ul style="margin:0 0 0 18px;list-style:disc">'; foreach ( $jr as $j ) { echo '<li><code>' . esc_html( $j['ip'] ) . '</code> · ' . esc_html( human_time_diff( $j['t'] ) ) . ' ' . esc_html__( 'ago', 'sidcraft-rankboost' ) . ' · <code>' . esc_html( $j['path'] ) . '</code> · ' . esc_html( ! empty( $j['perm'] ) ? __( 'blocked for good', 'sidcraft-rankboost' ) : __( 'refused (BotVanguard not active)', 'sidcraft-rankboost' ) ) . '</li>'; } echo '</ul>'; }
+		echo '</td></tr>';
 		echo '<tr><th scope="row">' . esc_html__( 'Posts to check', 'sidcraft-rankboost' ) . '</th><td><input type="number" min="0" step="100" class="small-text" name="' . esc_attr( Sidcraft_RankBoost_Settings::OPTION ) . '[audit_limit]" value="' . (int) Sidcraft_RankBoost_Settings::get( 'audit_limit' ) . '"> <span class="description">' . esc_html__( 'The audit and the broken-link scan check all pages and your newest posts, up to this number. Keep it modest on a site with thousands of posts, otherwise the scan keeps the server busy. 0 = every post. New and edited posts are always checked when saved.', 'sidcraft-rankboost' ) . '</span></td></tr>';
 		echo '<tr><th scope="row">' . esc_html__( 'Related list style', 'sidcraft-rankboost' ) . '</th><td><select name="' . esc_attr( Sidcraft_RankBoost_Settings::OPTION ) . '[related_style]"><option value="collapsed" ' . selected( $o['related_style'], 'collapsed', false ) . '>' . esc_html__( 'Folded (click to open)', 'sidcraft-rankboost' ) . '</option><option value="open" ' . selected( $o['related_style'], 'open', false ) . '>' . esc_html__( 'Always open', 'sidcraft-rankboost' ) . '</option></select><p class="description">' . esc_html__( 'The home page never shows this list. On any other page you can switch it off in that page’s Sidcraft RankBoost box.', 'sidcraft-rankboost' ) . '</p></td></tr>';
 		echo '<tr><th scope="row">' . esc_html__( 'Title separator', 'sidcraft-rankboost' ) . '</th><td><input type="text" size="3" name="' . esc_attr( Sidcraft_RankBoost_Settings::OPTION ) . '[title_sep]" value="' . esc_attr( $o['title_sep'] ) . '"></td></tr>';

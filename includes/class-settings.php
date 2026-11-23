@@ -16,6 +16,8 @@ class Sidcraft_RankBoost_Settings {
 			'sitemap'            => 1,
 			'auto_redirects'     => 1,     // 301 when a slug changes, and fix near-miss 404s.
 			'fuzzy_404'          => 1,
+			'junk_block'         => 1,     // block for good an address that asks for a junk path such as /-/-/-/-/-/-/-/ (needs Sidcraft BotVanguard).
+			'junk_extra'         => '',    // more words or patterns that mean the same, one per line.
 			'auto_alt'           => 1,
 			'related_links'      => 1,     // posts with no internal links get a short "You may also like" list.
 			'related_pages'      => 0,     // also add the list to pages that link nowhere (switched on by the one-click fix).
@@ -66,6 +68,9 @@ class Sidcraft_RankBoost_Settings {
 				$out[ $k ] = ( isset( $in[ $k ] ) && 'open' === $in[ $k ] ) ? 'open' : 'collapsed';
 			} elseif ( in_array( $k, array( 'title_sep', 'twitter_site' ), true ) ) {
 				$out[ $k ] = isset( $in[ $k ] ) ? sanitize_text_field( $in[ $k ] ) : $def;
+			} elseif ( 'junk_extra' === $k ) {
+				$lines = array(); foreach ( preg_split( '/\R/', isset( $in[ $k ] ) ? (string) $in[ $k ] : '' ) as $l ) { $l = trim( sanitize_text_field( $l ) ); if ( strlen( $l ) >= 4 && count( $lines ) < 100 ) { $lines[] = $l; } }
+				$out[ $k ] = implode( "\n", array_unique( $lines ) );
 			} elseif ( 'audit_limit' === $k ) {
 				$out[ $k ] = isset( $in[ $k ] ) ? max( 0, min( 1000000, (int) $in[ $k ] ) ) : (int) $def;
 			} elseif ( 'default_image' === $k ) {

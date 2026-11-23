@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.6
+Stable tag: 2.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -143,6 +143,16 @@ To get the buttons, install and activate Sidcraft BotVanguard (Plugins > Add New
 
 Before an address is blocked, Sidcraft RankBoost checks whether it is a genuine search engine crawler. If it is, it is not blocked, because that would remove your pages from search results. An address on your BotVanguard "Never block these addresses" list is shown as "never blocked" and cannot be blocked from here. A blocked address stays on the list until you press Unblock, and you can manage the whole list in BotVanguard.
 
+= Someone keeps asking for addresses like /-/-/-/-/-/-/-/-/-/-. Can I block them? =
+
+Yes, and it is on by default. A real page address never looks like that, so Sidcraft RankBoost treats a request for a path made only of slashes, dashes, dots and underscores (six or more slashes), or a site search for one, as junk. The visitor gets a plain "Forbidden" at once and the address is **blocked for good**. You can see the addresses blocked this way under Settings.
+
+* **Permanent blocking needs Sidcraft BotVanguard.** RankBoost adds the address to the BotVanguard block list, which you can edit under BotVanguard > Bots. Without BotVanguard the junk request is still refused every time, but the address cannot be blocked for good.
+* **Safety:** genuine search engine crawlers (checked by reverse DNS), addresses on your BotVanguard "Never block these addresses" list, and logged-in users are never blocked.
+* **More patterns:** under Settings > "Junk paths: more patterns" add words or pieces of an address, one per line (at least 4 characters). A visitor whose address or search contains one of them is treated the same way. For example `wp-content/plugins/zzz` or `/.env`.
+* **Switch it off:** untick "Block for good an address that asks for a junk path" under Settings.
+* **To unblock** an address by mistake, remove it from the BotVanguard block list (BotVanguard > Bots), or press Unblock next to it on the Broken URLs tab.
+
 = Is anything sent to the author? =
 
 No. See "External services" for the one optional request the plugin makes (IndexNow).
@@ -159,6 +169,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 8. Settings: every automatic feature has an on/off switch.
 
 == Changelog ==
+
+= 2.0.7 =
+* New: junk-path blocking. An address that asks for a junk path such as /-/-/-/-/-/-/-/-/-/- (only slashes, dashes, dots and underscores, six or more slashes), or searches for one, is refused straight away and blocked for good through Sidcraft BotVanguard. Add your own patterns under Settings. Genuine search engine crawlers, the BotVanguard never-block list and logged-in users are never blocked. Switch it off under Settings.
 
 = 2.0.6 =
 * Plugin Check clean-up: the lightweight Visitor Stats endpoint now uses wp_parse_url() and guards direct access in the way WordPress.org expects, and the report no longer asks for extra execution time.
@@ -312,6 +325,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 2.0.7 =
+New: addresses that ask for junk paths like /-/-/-/-/-/ are blocked for good (needs Sidcraft BotVanguard).
 
 = 2.0.6 =
 Small code clean-up from the WordPress.org Plugin Check. No change to how the plugin works.

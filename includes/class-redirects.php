@@ -38,6 +38,7 @@ class Sidcraft_RankBoost_Redirects {
 
 	public static function init() {
 		add_action( 'init', function () { if ( get_option( 'sidcraft_rankboost_db_version' ) !== SIDCRAFT_RANKBOOST_VERSION ) { self::install(); } } );
+		add_action( 'init', array( __CLASS__, 'junk_hit' ), 1 );
 		if ( ! Sidcraft_RankBoost_Settings::on( 'auto_redirects' ) ) { return; }
 		add_action( 'template_redirect', array( __CLASS__, 'handle' ), 0 );
 		add_action( 'template_redirect', array( __CLASS__, 'handle_404' ), 99 );
@@ -243,5 +244,47 @@ class Sidcraft_RankBoost_Redirects {
 		}
 		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE last_seen < %s', self::table404(), gmdate( 'Y-m-d H:i:s', time() - 90 * DAY_IN_SECONDS ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
 		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id NOT IN (SELECT id FROM (SELECT id FROM %i ORDER BY hits DESC, last_seen DESC LIMIT 1000) t)', self::table404(), self::table404() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- custom plugin table.
+	}
+
+	/* ---------- Junk paths (for example /-/-/-/-/-/-/) ---------- */
+
+	/** True for a path or search text made only of slashes, dashes, dots, underscores and tildes (6 or more slashes, or 10+ characters), or that holds one of the owner's extra patterns. */
+	public static function is_junk( $text ) {
+		$t = trim( (string) rawurldecode( (string) $text ) );
+		if ( '' === $t ) { return false; }
+		if ( preg_match( '#^[/\\\\\-_.~\s]+$#', $t ) && ( substr_count( $t, '/' ) + substr_count( $t, '\\' ) ) >= 6 ) { return true; }
+		$extra = (string) Sidcraft_RankBoost_Settings::get( 'junk_extra' );
+		if ( '' !== $extra ) {
+			$tl = strtolower( $t );
+			foreach ( preg_split( '/\R/', $extra, -1, PREG_SPLIT_NO_EMPTY ) as $l ) { $l = strtolower( trim( $l ) ); if ( strlen( $l ) >= 4 && false !== strpos( $tl, $l ) ) { return true; } }
+		}
+		return false;
+	}
+
+	/** The last addresses blocked by the junk rule. */
+	public static function recent_junk() { $r = get_option( 'sidcraft_rankboost_junk', array() ); return is_array( $r ) ? array_slice( $r, 0, 15 ) : array(); }
+
+	/** Runs early on every visitor request: an address that asks for a junk path is refused, and blocked for good through Sidcraft BotVanguard. */
+	public static function junk_hit() {
+		if ( ! Sidcraft_RankBoost_Settings::on( 'junk_block' ) || self::skip_request() || ( defined( 'WP_CLI' ) && WP_CLI ) ) { return; }
+		$uri  = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only matched against a pattern.
+		$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
+		$s    = isset( $_GET['s'] ) && is_string( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read only, matched against a pattern.
+		if ( ! self::is_junk( $path ) && ! self::is_junk( $s ) ) { return; }
+		if ( is_user_logged_in() ) { return; }
+		$ip = self::visitor_ip();
+		$S  = Sidcraft_RankBoost_Admin::bv( 'Settings' );
+		$perm = false;
+		if ( '' !== $ip ) {
+			if ( '' !== $S && method_exists( $S, 'is_allowed_ip' ) && $S::is_allowed_ip( $ip ) ) { return; } // the owner's own never-block list.
+			list( $engine ) = Sidcraft_RankBoost_Admin::search_engine( $ip );
+			if ( $engine ) { return; } // a genuine search engine crawler is never blocked.
+			if ( '' !== $S && false !== $S::add_line( 'ip_block', $ip ) ) { $perm = true; }
+			$log = self::recent_junk(); array_unshift( $log, array( 'ip' => $ip, 't' => time(), 'path' => substr( '' !== $path ? $path : $s, 0, 80 ), 'perm' => $perm ) );
+			update_option( 'sidcraft_rankboost_junk', array_slice( $log, 0, 30 ), false );
+		}
+		if ( ! headers_sent() ) { status_header( 403 ); nocache_headers(); header( 'Content-Type: text/plain; charset=utf-8' ); header( 'X-Robots-Tag: noindex' ); }
+		echo 'Forbidden';
+		exit;
 	}
 }
