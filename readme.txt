@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 2.0.2 =
+* Fix: minified CSS and JavaScript files are now linked with the same https:// scheme as the original file. On some sites the uploads folder was configured with http://, so the browser blocked the minified scripts as insecure (mixed) content and features that depend on them, such as the Sidcraft Page Builder menu and menu anchor scripts, stopped working. Query Monitor listed them as "Insecure content".
+
 = 2.0.1 =
 * Performance: Visitor Stats now counts page views through a lightweight endpoint (includes/visitors/hit.php) that loads only the WordPress core, about 10 ms instead of a full WordPress request for every page view and for every time ping. It falls back to the REST route automatically if the file cannot start. Fewer busy PHP workers means a faster admin on shared hosting.
 * Performance: background link scans, audits and cache preloading no longer overlap and wait while the server is busy (see 2.0.0 notes).
@@ -283,6 +286,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 2.0.2 =
+Fixes minified scripts being blocked as insecure content on https sites. Recommended.
 
 = 2.0.1 =
 Faster Visitor Stats: page views are counted by a lightweight endpoint, so the admin stays responsive under traffic.

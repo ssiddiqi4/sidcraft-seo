@@ -207,6 +207,9 @@ class Sidcraft_RankBoost_Minify {
 		$name = substr( sha1( $abs ), 0, 12 ) . '-' . filemtime( $abs ) . '-' . $size . '.' . $ext;
 		$dir  = trailingslashit( $up['basedir'] ) . 'sidcraft-rankboost/min/';
 		$url  = trailingslashit( $up['baseurl'] ) . 'sidcraft-rankboost/min/' . $name;
+		// Use the same scheme as the file being replaced (or the page's own), so an https site never gets an http:// script that browsers block as mixed content.
+		$scheme = wp_parse_url( $src, PHP_URL_SCHEME );
+		$url    = set_url_scheme( $url, in_array( $scheme, array( 'http', 'https' ), true ) ? $scheme : null );
 		if ( is_file( $dir . $name ) ) { return $url; }
 		$bad = get_option( 'sidcraft_rankboost_min_bad', array() ); if ( is_array( $bad ) && isset( $bad[ $name ] ) ) { return $src; }
 		$code = file_get_contents( $abs ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading the site's own local file.
