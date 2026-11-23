@@ -130,6 +130,19 @@ Titles, descriptions and structured data are built per request from data WordPre
 
 The plugin stops. Its tables and settings are kept unless you ticked "Delete all Sidcraft RankBoost data when the plugin is deleted" in Settings before deleting it.
 
+= Why do I only see "Check" next to an address on the Broken URLs tab? =
+
+Check, Block and Unblock work together with the free plugin **Sidcraft BotVanguard**:
+
+* **Check** works on its own. It looks up the visitor's host name and tells you whether the address belongs to a genuine search engine crawler such as Googlebot or Bingbot, or is not one.
+* **Block** and **Unblock** need Sidcraft BotVanguard to be installed and active. Sidcraft RankBoost shows the buttons only when it finds that plugin, and it does the blocking through it, so the address is added to (or taken off) the BotVanguard block list. Without BotVanguard you only see Check.
+
+To get the buttons, install and activate Sidcraft BotVanguard (Plugins > Add New > Upload Plugin, or search for it), then reload the Broken URLs tab. Nothing else needs to be set up. Older versions of the same plugin (Sidcraft Bot Shield, BotVaguard) also work.
+
+= How does Block protect me from blocking Google by mistake? =
+
+Before an address is blocked, Sidcraft RankBoost checks whether it is a genuine search engine crawler. If it is, it is not blocked, because that would remove your pages from search results. An address on your BotVanguard "Never block these addresses" list is shown as "never blocked" and cannot be blocked from here. A blocked address stays on the list until you press Unblock, and you can manage the whole list in BotVanguard.
+
 = Is anything sent to the author? =
 
 No. See "External services" for the one optional request the plugin makes (IndexNow).
@@ -138,7 +151,7 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 1. The Overview screen: average score, how many pages are good, and the issues most worth looking at.
 2. Pages & Posts, with the lowest scores first and plain-language reasons.
-3. Broken URLs: the addresses visitors and bots asked for that do not exist, with one-click redirect, block and 410 Gone.
+3. Broken URLs: the addresses visitors and bots asked for that do not exist, with one-click redirect, 410 Gone, and Check / Block / Unblock for visitor addresses (Block and Unblock need Sidcraft BotVanguard).
 4. Redirects & 404s: automatic and manual redirects.
 5. Speed & Database, Cache & minify: page cache, cache schedule, and HTML, CSS and JavaScript minify.
 6. Speed & Database, Database: clean old revisions, spam, transients and orphaned data, with a maintenance schedule.
