@@ -87,6 +87,7 @@ class Sidcraft_RankBoost_Speed_Admin {
 
 	private static function sec_database() {
 		global $wpdb; $o = Sidcraft_RankBoost_Speed::all(); $c = Sidcraft_RankBoost_DbClean::counts(); $items = Sidcraft_RankBoost_DbClean::items();
+		self::backup_panel();
 		echo '<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid #2271b1;border-radius:4px;padding:6px 18px 10px;margin:0 0 18px;max-width:900px">';
 		self::form_open( 'save_db' );
 		echo '<h2 style="margin:10px 0">' . esc_html__( 'Database maintenance schedule', 'sidcraft-rankboost' ) . '</h2><p><label><strong>' . esc_html__( 'Optimize the database', 'sidcraft-rankboost' ) . '</strong> ';
@@ -101,6 +102,7 @@ class Sidcraft_RankBoost_Speed_Admin {
 			echo '<tr><td><input type="checkbox" name="keys[]" value="' . esc_attr( $k ) . '"' . ( $c[ $k ] > 0 ? ' checked' : ' disabled' ) . '></td><td><strong>' . esc_html( $it[0] ) . '</strong><br><span class="description">' . esc_html( $it[1] ) . '</span></td><td>' . (int) $c[ $k ] . '</td></tr>';
 		}
 		echo '</tbody></table><p><button class="button button-primary" data-sidcraft-confirm="' . esc_attr__( 'Delete the ticked items permanently?', 'sidcraft-rankboost' ) . '">' . esc_html__( 'Clean selected', 'sidcraft-rankboost' ) . '</button></p></form>';
+		self::leftovers_panel();
 		echo '<h2>' . esc_html__( 'Tables', 'sidcraft-rankboost' ) . '</h2>';
 		if ( Sidcraft_RankBoost_DbClean::is_mysql() ) {
 			$t = Sidcraft_RankBoost_DbClean::tables(); $tot = 0; $free = 0;
@@ -116,6 +118,62 @@ class Sidcraft_RankBoost_Speed_Admin {
 		echo '<table class="widefat striped" style="max-width:900px"><tbody>';
 		foreach ( $top as $r ) { echo '<tr><td><code>' . esc_html( $r['name'] ) . '</code></td><td>' . esc_html( size_format( (int) $r['bytes'], 1 ) ) . '</td></tr>'; }
 		echo '</tbody></table><p class="description">' . esc_html__( 'Names usually start with the plugin that owns them. If the plugin is gone, its leftover options can be removed with a tool such as WP-CLI; RankBoost does not delete options for you.', 'sidcraft-rankboost' ) . '</p>';
+	}
+
+	/** Backup: download the whole database as database.sql. */
+	private static function backup_panel() {
+		echo '<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid #1a7f37;border-radius:4px;padding:6px 18px 12px;margin:0 0 18px;max-width:900px"><h2 style="margin:10px 0">' . esc_html__( 'Back up your database', 'sidcraft-rankboost' ) . '</h2>';
+		if ( ! Sidcraft_RankBoost_DbBackup::allowed() ) { echo '<p>' . esc_html__( 'Only a network super admin can download a database backup on a multisite network.', 'sidcraft-rankboost' ) . '</p></div>'; return; }
+		echo '<p>' . esc_html( sprintf( /* translators: %d: number of tables */ _n( 'Saves all %d table of this site (posts, pages, settings, users, orders and everything else) as one file, database.sql, that you can restore with phpMyAdmin (Import) or the mysql command.', 'Saves all %d tables of this site (posts, pages, settings, users, orders and everything else) as one file, database.sql, that you can restore with phpMyAdmin (Import) or the mysql command.', count( Sidcraft_RankBoost_DbBackup::tables() ), 'sidcraft-rankboost' ), count( Sidcraft_RankBoost_DbBackup::tables() ) ) ) . '</p>';
+		self::btn( 'db_backup', __( 'Download database.sql', 'sidcraft-rankboost' ), 'button button-primary' );
+		echo '<p class="description">' . esc_html__( 'The file is built while it downloads, in small pieces, so large databases do not run out of memory; a very large one may be cut short by your host\'s time limit, in which case use your host\'s own backup. The file contains password hashes and private data: keep it somewhere safe and never put it on a public web address.', 'sidcraft-rankboost' ) . '</p></div>';
+	}
+
+	/** Leftovers of deleted plugins. */
+	private static function leftovers_panel() {
+		$r = Sidcraft_RankBoost_Leftovers::last(); $saved = Sidcraft_RankBoost_DbBackup::saved();
+		echo '<h2>' . esc_html__( 'Leftovers from deleted plugins', 'sidcraft-rankboost' ) . '</h2>';
+		echo '<p style="max-width:900px">' . esc_html( sprintf( /* translators: %d: number of plugins */ __( 'When a plugin is deleted it often leaves settings, temporary data, scheduled tasks and sometimes whole tables behind. This scan recognises %d popular plugins and lists only those whose plugin folder is no longer on this site (a deactivated plugin that is still installed is never listed). Your posts, pages and their custom fields are never touched.', 'sidcraft-rankboost' ), $r ? (int) $r['known'] : count( Sidcraft_RankBoost_Leftovers::signatures() ) ) ) . '</p>';
+		self::btn( 'lo_scan', __( 'Scan the database', 'sidcraft-rankboost' ), 'button button-primary' );
+		if ( $r ) {
+			echo '<span class="description">' . esc_html( sprintf( /* translators: %s: time ago */ __( 'Last scan: %s ago', 'sidcraft-rankboost' ), human_time_diff( (int) $r['time'] ) ) ) . '</span>';
+			if ( ! $r['plugins'] ) {
+				echo '<p><strong>' . esc_html__( 'No leftovers from deleted plugins were found.', 'sidcraft-rankboost' ) . '</strong></p>';
+			} else {
+				self::form_open( 'lo_clean' );
+				echo '<table class="widefat striped" style="max-width:900px"><thead><tr><th style="width:30px"></th><th>' . esc_html__( 'Deleted plugin and what it left behind', 'sidcraft-rankboost' ) . '</th></tr></thead><tbody>';
+				foreach ( $r['plugins'] as $id => $p ) {
+					$bits = array();
+					if ( $p['options'] ) { $bits[] = sprintf( /* translators: 1: number, 2: size */ _n( '%1$d setting (%2$s)', '%1$d settings (%2$s)', $p['options'], 'sidcraft-rankboost' ), $p['options'], size_format( $p['bytes'], 1 ) ); }
+					if ( $p['transients'] ) { $bits[] = sprintf( /* translators: %d: number */ _n( '%d temporary cache entry', '%d temporary cache entries', $p['transients'], 'sidcraft-rankboost' ), $p['transients'] ); }
+					if ( $p['cron'] ) { $bits[] = sprintf( /* translators: %d: number */ _n( '%d scheduled task', '%d scheduled tasks', $p['cron'], 'sidcraft-rankboost' ), $p['cron'] ); }
+					echo '<tr><td><input type="checkbox" name="lo_sig[]" value="' . esc_attr( $id ) . '" checked></td><td><strong>' . esc_html( $p['name'] ) . '</strong><br>' . esc_html( $bits ? implode( ' · ', $bits ) : __( 'Tables only', 'sidcraft-rankboost' ) );
+					if ( $p['sample'] ) { echo '<br><span class="description">' . wp_kses( '<code>' . implode( '</code>, <code>', array_map( 'esc_html', $p['sample'] ) ) . '</code>', array( 'code' => array() ) ) . ( $p['options'] > count( $p['sample'] ) ? ' …' : '' ) . '</span>'; }
+					foreach ( $p['tables'] as $t ) {
+						echo '<br><label><input type="checkbox" name="lo_tbl[]" value="' . esc_attr( $t['name'] ) . '"> ' . esc_html__( 'Also delete the table', 'sidcraft-rankboost' ) . ' <code>' . esc_html( $t['name'] ) . '</code> <span class="description">(' . esc_html( sprintf( /* translators: 1: rows, 2: size */ __( '%1$s rows, %2$s: this is data the plugin stored, for example orders, entries or logs', 'sidcraft-rankboost' ), number_format_i18n( $t['rows'] ), size_format( $t['bytes'], 1 ) ) ) . ')</span></label>';
+					}
+					echo '</td></tr>';
+				}
+				echo '</tbody></table><p><button class="button button-primary" data-sidcraft-confirm="' . esc_attr__( 'Remove the ticked leftovers? A copy is saved first, but tables you tick are deleted from the database.', 'sidcraft-rankboost' ) . '">' . esc_html__( 'Clean up the ticked plugins', 'sidcraft-rankboost' ) . '</button> <span class="description">' . esc_html__( 'Settings, temporary data and scheduled tasks are ticked. Tables are never ticked for you.', 'sidcraft-rankboost' ) . '</span></p></form>';
+			}
+			if ( $r['unknown'] ) {
+				echo '<h3>' . esc_html__( 'Tables RankBoost does not recognise', 'sidcraft-rankboost' ) . '</h3><p class="description">' . esc_html__( 'These do not belong to WordPress or to a plugin RankBoost knows, and their plugin may still be installed. They are only listed: RankBoost will not remove them. Check the name with the plugin author before deleting one yourself.', 'sidcraft-rankboost' ) . '</p><table class="widefat striped" style="max-width:900px"><tbody>';
+				foreach ( $r['unknown'] as $t ) { echo '<tr><td><code>' . esc_html( $t['name'] ) . '</code></td><td>' . esc_html( sprintf( /* translators: %s: number of rows */ __( '%s rows', 'sidcraft-rankboost' ), number_format_i18n( $t['rows'] ) ) ) . '</td><td>' . esc_html( size_format( $t['bytes'], 1 ) ) . '</td></tr>'; }
+				echo '</tbody></table>';
+			}
+		}
+		if ( $saved ) {
+			echo '<h3>' . esc_html__( 'Safety copies of earlier clean-ups', 'sidcraft-rankboost' ) . '</h3><p class="description">' . esc_html__( 'Each clean-up saves what it removed in a private folder. To undo one, download it and import it with phpMyAdmin. Delete the copies when you no longer need them.', 'sidcraft-rankboost' ) . '</p><table class="widefat striped" style="max-width:900px"><tbody>';
+			foreach ( array_slice( $saved, 0, 10 ) as $f ) {
+				echo '<tr><td>' . esc_html( wp_date( 'Y-m-d H:i', $f['time'] ) ) . '</td><td>' . esc_html( size_format( $f['size'], 1 ) ) . '</td><td>';
+				foreach ( array( 'lo_dl' => __( 'Download', 'sidcraft-rankboost' ), 'lo_del' => __( 'Delete', 'sidcraft-rankboost' ) ) as $do => $label ) {
+					echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin-right:8px">'; wp_nonce_field( 'sidcraft_rankboost_speed' );
+					echo '<input type="hidden" name="action" value="sidcraft_rankboost_speed"><input type="hidden" name="do" value="' . esc_attr( $do ) . '"><input type="hidden" name="file" value="' . esc_attr( $f['name'] ) . '"><button class="button button-small">' . esc_html( $label ) . '</button></form>';
+				}
+				echo '</td></tr>';
+			}
+			echo '</tbody></table>';
+		}
 	}
 
 	/* ------------------------------------------------------------- debug */
@@ -185,6 +243,16 @@ class Sidcraft_RankBoost_Speed_Admin {
 				$res = Sidcraft_RankBoost_DbClean::run( $keys ); $items = Sidcraft_RankBoost_DbClean::items(); $p = array();
 				foreach ( $res as $k => $n ) { $p[] = $items[ $k ][0] . ': ' . (int) $n; }
 				$msg = $p ? __( 'Cleaned.', 'sidcraft-rankboost' ) . ' ' . implode( ' · ', $p ) : __( 'Nothing was selected.', 'sidcraft-rankboost' ); break;
+			case 'db_backup': Sidcraft_RankBoost_DbBackup::download(); break; // Sends the file and exits.
+			case 'lo_scan': $sec = 'database'; $r = Sidcraft_RankBoost_Leftovers::scan(); $msg = $r['plugins'] ? sprintf( /* translators: %d: number of plugins */ _n( 'Scan finished: leftovers from %d deleted plugin found.', 'Scan finished: leftovers from %d deleted plugins found.', count( $r['plugins'] ), 'sidcraft-rankboost' ), count( $r['plugins'] ) ) : __( 'Scan finished: no leftovers from deleted plugins found.', 'sidcraft-rankboost' ); break;
+			case 'lo_clean':
+				$sec = 'database';
+				$ids = isset( $_POST['lo_sig'] ) ? array_map( 'sanitize_key', (array) wp_unslash( $_POST['lo_sig'] ) ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitised by array_map.
+				$tb  = isset( $_POST['lo_tbl'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['lo_tbl'] ) ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitised by array_map, then checked against the fresh scan.
+				$res = Sidcraft_RankBoost_Leftovers::cleanup( $ids, $tb );
+				$msg = is_wp_error( $res ) ? $res->get_error_message() : sprintf( /* translators: 1: settings, 2: cache entries, 3: tasks, 4: tables */ __( 'Cleaned up: %1$d settings, %2$d temporary entries, %3$d scheduled tasks, %4$d tables. A copy of what was removed is saved under "Safety copies" below.', 'sidcraft-rankboost' ), $res['options'], $res['transients'], $res['cron'], $res['tables'] ); break;
+			case 'lo_dl': $f = isset( $_POST['file'] ) ? sanitize_file_name( wp_unslash( $_POST['file'] ) ) : ''; Sidcraft_RankBoost_DbBackup::send_saved( $f ); break; // Sends the file and exits.
+			case 'lo_del': $sec = 'database'; $f = isset( $_POST['file'] ) ? sanitize_file_name( wp_unslash( $_POST['file'] ) ) : ''; $msg = Sidcraft_RankBoost_DbBackup::delete_saved( $f ) ? __( 'Safety copy deleted.', 'sidcraft-rankboost' ) : __( 'Could not delete that file.', 'sidcraft-rankboost' ); break;
 			case 'db_optimize': $sec = 'database'; $n = Sidcraft_RankBoost_DbClean::optimize(); $msg = sprintf( /* translators: %d: number of tables */ __( 'Optimized %d tables.', 'sidcraft-rankboost' ), $n ); break;
 			case 'speed_test': $sec = 'debug'; set_transient( 'sidcraft_rankboost_speedtest', Sidcraft_RankBoost_Perf::speed_test(), HOUR_IN_SECONDS ); $msg = __( 'Speed test finished.', 'sidcraft-rankboost' ); break;
 			case 'slow_clear': $sec = 'debug'; delete_option( Sidcraft_RankBoost_Perf::SLOW ); $msg = __( 'Cleared.', 'sidcraft-rankboost' ); break;

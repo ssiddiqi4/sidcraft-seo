@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.7
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,7 +30,7 @@ Sidcraft RankBoost is an independent plugin by Suhaib Siddiqi. It is not affilia
 
 = Speed & Database (optional) =
 
-A page cache, HTML/CSS/JavaScript minify, database clean-up (revisions, spam, expired transients, orphaned data) and performance debugging (health checks, speed test, slow-page log, error-log reader). Every option is off until you switch it on. The cache is stored as files in the uploads folder and needs no change to wp-config.php or the server; use only one caching plugin at a time.
+A page cache, HTML/CSS/JavaScript minify, database backup (download database.sql), database clean-up (revisions, spam, expired transients, orphaned data), a scan for the leftovers of deleted plugins, and performance debugging (health checks, speed test, slow-page log, error-log reader). Every option is off until you switch it on. The cache is stored as files in the uploads folder and needs no change to wp-config.php or the server; use only one caching plugin at a time.
 
 = Visitor Stats (built in) =
 
@@ -164,11 +164,15 @@ No. See "External services" for the one optional request the plugin makes (Index
 3. Broken URLs: the addresses visitors and bots asked for that do not exist, with one-click redirect, 410 Gone, and Check / Block / Unblock for visitor addresses (Block and Unblock need Sidcraft BotVanguard).
 4. Redirects & 404s: automatic and manual redirects.
 5. Speed & Database, Cache & minify: page cache, cache schedule, and HTML, CSS and JavaScript minify.
-6. Speed & Database, Database: clean old revisions, spam, transients and orphaned data, with a maintenance schedule.
+6. Speed & Database, Database: download a backup, clean old revisions, spam, transients and orphaned data, find leftovers of deleted plugins, with a maintenance schedule.
 7. Speed & Database, Performance & debug: server health checks and a speed test.
 8. Settings: every automatic feature has an on/off switch.
 
 == Changelog ==
+
+= 2.1.0 =
+* New: database backup. Speed & Database, Database has a "Download database.sql" button that saves every table of the site (structure and rows) as one SQL file you can import with phpMyAdmin or the mysql command. It is built in small pieces while it downloads, needs an administrator (a super admin on multisite) and a valid security check, and is never stored on the server.
+* New: leftovers from deleted plugins. A scan recognises 50 popular plugins (Yoast SEO, Rank Math, WooCommerce, Elementor, Jetpack, Wordfence, WPForms, Gravity Forms and others) and lists those whose plugin folder is no longer on the site, with the settings, temporary cache entries, scheduled tasks and tables they left behind. A plugin that is only deactivated is never listed, and a WooCommerce extension keeps WooCommerce's data safe. One button removes the ticked ones. Settings, cache entries and scheduled tasks are ticked for you; tables (which can hold orders, entries or logs) are never ticked for you. Before anything is deleted a copy of the removed settings and tables is saved as an SQL file in a private folder, with a download button, so the clean-up can be undone. Tables nobody recognises are only listed. Posts, pages and their custom fields are never touched.
 
 = 2.0.7 =
 * New: junk-path blocking. An address that asks for a junk path such as /-/-/-/-/-/-/-/-/-/- (only slashes, dashes, dots and underscores, six or more slashes), or searches for one, is refused straight away and blocked for good through Sidcraft BotVanguard. Add your own patterns under Settings. Genuine search engine crawlers, the BotVanguard never-block list and logged-in users are never blocked. Switch it off under Settings.
@@ -325,6 +329,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 * First release.
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+New: download a database backup (database.sql) and clean up what deleted plugins left behind, with a safety copy first.
 
 = 2.0.7 =
 New: addresses that ask for junk paths like /-/-/-/-/-/ are blocked for good (needs Sidcraft BotVanguard).
