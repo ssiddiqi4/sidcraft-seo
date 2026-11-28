@@ -165,9 +165,19 @@ class Sidcraft_RankBoost_Unlinked {
 			$key = self::path_key( get_permalink( $id ) );
 			if ( '' !== $key ) { $by[ $key ] = $id; }
 		}
+		// Category, tag and other archive pages list their posts, so a link to one counts as a link to its posts (stored as negative term IDs).
+		foreach ( get_taxonomies( array( 'public' => true ), 'names' ) as $tax ) {
+			if ( 'post_format' === $tax ) { continue; }
+			$terms = get_terms( array( 'taxonomy' => $tax, 'hide_empty' => true, 'fields' => 'ids', 'number' => 5000 ) );
+			foreach ( is_wp_error( $terms ) ? array() : $terms as $tid ) {
+				$link = get_term_link( (int) $tid, $tax );
+				$key  = is_wp_error( $link ) ? '' : self::path_key( $link );
+				if ( '' !== $key && ! isset( $by[ $key ] ) ) { $by[ $key ] = -(int) $tid; }
+			}
+		}
 		$linked = array();
 		foreach ( self::FIXED as $o ) { $id = (int) get_option( $o ); if ( $id ) { $linked[ $id ] = 1; } }
-		update_option( self::STATE, array( 'phase' => 'posts', 'cursor' => 0, 'started' => time(), 'cand' => $cand, 'by' => $by, 'linked' => $linked, 'seen' => 0 ), false );
+		update_option( self::STATE, array( 'phase' => 'posts', 'cursor' => 0, 'started' => time(), 'cand' => $cand, 'by' => $by, 'linked' => $linked, 'lterms' => array(), 'seen' => 0 ), false );
 	}
 
 	/** Do some work. Returns true while more remains. */
@@ -191,15 +201,18 @@ class Sidcraft_RankBoost_Unlinked {
 				$id   = (int) $r->ID;
 				$text = $r->post_content . ' ' . $r->post_excerpt;
 				$tids = array();
+				$mt   = '';
+				$mo   = 0;
 				foreach ( isset( $by_id[ $id ] ) ? $by_id[ $id ] : array() as $m ) {
-					if ( '_menu_item_object_id' === $m->meta_key ) { $tids[] = (int) $m->meta_value; continue; }
+					if ( '_menu_item_object_id' === $m->meta_key ) { $mo = (int) $m->meta_value; continue; }
+					if ( '_menu_item_type' === $m->meta_key ) { $mt = (string) $m->meta_value; continue; }
 					if ( 0 === strpos( $m->meta_key, '_menu_item_' ) ) { continue; }
 					$text .= ' ' . self::text( maybe_unserialize( $m->meta_value ) );
 				}
-				if ( 'nav_menu_item' !== $r->post_type ) { $tids = array(); }
-				foreach ( array_merge( $tids, self::targets( $text, $st['by'] ) ) as $t ) {
-					if ( (int) $t !== $id ) { $st['linked'][ (int) $t ] = 1; }
+				if ( 'nav_menu_item' === $r->post_type && $mo ) {
+					if ( 'post_type' === $mt ) { $tids[] = $mo; } elseif ( 'taxonomy' === $mt ) { $tids[] = -$mo; }
 				}
+				foreach ( array_merge( $tids, self::targets( $text, $st['by'] ) ) as $t ) { self::mark( $st, (int) $t, $id ); }
 				$st['cursor'] = $id;
 				++$st['seen'];
 			}
@@ -208,11 +221,17 @@ class Sidcraft_RankBoost_Unlinked {
 		if ( 'options' === $st['phase'] && time() <= $deadline + 5 ) {
 			$vals = $wpdb->get_col( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR ( option_name LIKE %s AND option_name NOT LIKE %s AND option_name NOT LIKE %s )", $wpdb->esc_like( 'widget_' ) . '%', $wpdb->esc_like( 'theme_mods_' ) . '%', $wpdb->esc_like( 'sidcraft' ) . '%', $wpdb->esc_like( 'sidcraft_rankboost' ) . '%', $wpdb->esc_like( 'sidcraft_vs' ) . '%' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- reads options by name prefix; no WordPress API does this.
 			foreach ( (array) $vals as $v ) {
-				foreach ( self::targets( self::text( maybe_unserialize( $v ) ), $st['by'] ) as $t ) { $st['linked'][ (int) $t ] = 1; }
+				foreach ( self::targets( self::text( maybe_unserialize( $v ) ), $st['by'] ) as $t ) { self::mark( $st, (int) $t, 0 ); }
 			}
 			$st['phase'] = 'done';
 		}
 		if ( 'done' === $st['phase'] ) {
+			if ( ! empty( $st['lterms'] ) ) {
+				$tids = array_map( 'intval', array_keys( $st['lterms'] ) );
+				$ph   = implode( ',', array_fill( 0, count( $tids ), '%d' ) );
+				$objs = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT tr.object_id FROM {$wpdb->term_relationships} tr INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id WHERE tt.term_id IN ($ph)", $tids ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are generated above.
+				foreach ( (array) $objs as $o ) { $st['linked'][ (int) $o ] = 1; }
+			}
 			$ids = array();
 			foreach ( $st['cand'] as $id ) { if ( empty( $st['linked'][ $id ] ) ) { $ids[] = (int) $id; } }
 			update_option( self::LIST, array( 'time' => time(), 'ids' => $ids, 'checked' => count( $st['cand'] ) ), false );
@@ -232,6 +251,11 @@ class Sidcraft_RankBoost_Unlinked {
 		if ( $more ) { wp_schedule_single_event( time() + 2 * MINUTE_IN_SECONDS, self::EVENT ); }
 	}
 
+	/** Record one link target: a positive number is a post, a negative one a category, tag or other term. */
+	private static function mark( array &$st, $target, $source ) {
+		if ( $target < 0 ) { $st['lterms'][ -$target ] = 1; } elseif ( $target !== (int) $source ) { $st['linked'][ $target ] = 1; }
+	}
+
 	private static function text( $value ) {
 		return is_scalar( $value ) ? (string) $value : (string) wp_json_encode( $value );
 	}
@@ -243,6 +267,9 @@ class Sidcraft_RankBoost_Unlinked {
 		if ( false === strpos( $text, '/' ) && ! preg_match( '/\d/', $text ) ) { return $found; }
 		if ( preg_match_all( '/\b(?:page_id|post_id|object_id|p|id)\b["\']?\s*[:=]\s*["\']?(\d+)/i', $text, $m ) ) {
 			foreach ( $m[1] as $n ) { $found[] = (int) $n; }
+		}
+		if ( preg_match_all( '/[?&]cat=(\d+)/i', $text, $m ) ) {
+			foreach ( $m[1] as $n ) { $found[] = -(int) $n; }
 		}
 		if ( preg_match_all( '#(?:https?:)?//[^\s"\'<>()\[\]{}\\\\]+|(?<=[\s"\'(=,])/[^\s"\'<>()\[\]{}\\\\]*#i', $text, $m ) ) {
 			foreach ( $m[0] as $url ) {

@@ -5,7 +5,7 @@ Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
 Tested up to: 7.2
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -170,6 +170,9 @@ No. See "External services" for the one optional request the plugin makes (Index
 8. Settings: every automatic feature has an on/off switch.
 
 == Changelog ==
+
+= 2.2.1 =
+* Fixed: Unlinked & Archive listed posts that only appear on a category or tag page (for example a Stories category), so archiving them removed them from that page. A link to a category or tag, from a menu, a widget or page content, now counts as a link to every post in it. The list also shows each item's categories, and the archive confirmation says what disappears.
 
 = 2.2.0 =
 * Renamed to **Sidcraft Search Boost Suite** (slug `sidcraft-search-boost-suite`), as requested by the WordPress.org plugin review team. Settings and data are kept.

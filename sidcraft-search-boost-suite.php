@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Sidcraft Search Boost Suite
  * Description:       Hands-off SEO for WordPress pages and posts: automatic titles and descriptions, social cards, structured data, sitemap, redirects, image alt text, instant search-engine notification and a daily self-audit, speed tools and private visitor statistics. Works out of the box with no setup.
- * Version:           2.2.0
+ * Version:           2.2.1
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Suhaib Siddiqi
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SIDCRAFT_RANKBOOST_VERSION', '2.2.0' );
+define( 'SIDCRAFT_RANKBOOST_VERSION', '2.2.1' );
 define( 'SIDCRAFT_RANKBOOST_FILE', __FILE__ );
 define( 'SIDCRAFT_RANKBOOST_DIR', plugin_dir_path( __FILE__ ) );
 

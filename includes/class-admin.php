@@ -302,7 +302,7 @@ class Sidcraft_RankBoost_Admin {
 		$data = Sidcraft_RankBoost_Unlinked::result();
 		$type = ( isset( $_GET['type'] ) && 'post' === sanitize_key( wp_unslash( $_GET['type'] ) ) ) ? 'post' : 'page'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- view switch only.
 		$base = admin_url( 'admin.php?page=sidcraft-search-boost-suite&tab=unlinked' );
-		echo '<p>' . esc_html__( 'Pages and posts that no menu, widget, template or other content links to. Nothing changes until you select items and move them to the Archive. Archived items are hidden from visitors and can be restored from the Archive view in the Pages or Posts list.', 'sidcraft-search-boost-suite' ) . '</p>';
+		echo '<p>' . esc_html__( 'Pages and posts that no menu, widget, template or other content links to. Posts in a category or tag that is linked (for example from a menu) count as linked, because they show on that category page. Nothing changes until you select items and move them to the Archive. Archived items are hidden from visitors and can be restored from the Archive view in the Pages or Posts list.', 'sidcraft-search-boost-suite' ) . '</p>';
 		self::button( 'unl_scan', __( 'Scan for unlinked content now', 'sidcraft-search-boost-suite' ), array(), 'button button-primary' );
 		if ( $st ) {
 			/* translators: %d: number of pages and posts read so far */
@@ -324,21 +324,31 @@ class Sidcraft_RankBoost_Admin {
 			echo '<div class="sidcraft-search-boost-suite-card sidcraft-search-boost-suite-tone-g" style="display:block;max-width:520px"><b>0</b>' . esc_html__( 'Nothing unlinked here. Every item is linked from somewhere on the site, or was already archived.', 'sidcraft-search-boost-suite' ) . '</div>';
 			return;
 		}
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-sidcraft-confirm="' . esc_attr__( 'Move the selected items to the Archive? They stop being visible to visitors until you restore them.', 'sidcraft-search-boost-suite' ) . '">';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-sidcraft-confirm="' . esc_attr__( 'Move the selected items to the Archive? They disappear from the site, including category pages, search, feeds and the sitemap, until you restore them.', 'sidcraft-search-boost-suite' ) . '">';
 		wp_nonce_field( 'sidcraft_rankboost_action' );
 		echo '<input type="hidden" name="action" value="sidcraft_rankboost_action"><input type="hidden" name="do" value="unl_archive">';
-		echo '<table class="widefat striped"><thead><tr><td class="check-column"><input type="checkbox" class="sidcraft-unl-all" aria-label="' . esc_attr__( 'Select all', 'sidcraft-search-boost-suite' ) . '"></td><th>' . esc_html__( 'Title', 'sidcraft-search-boost-suite' ) . '</th><th>' . esc_html__( 'Status', 'sidcraft-search-boost-suite' ) . '</th><th>' . esc_html__( 'Last modified', 'sidcraft-search-boost-suite' ) . '</th><th>' . esc_html__( 'Address', 'sidcraft-search-boost-suite' ) . '</th></tr></thead><tbody>';
+		echo '<table class="widefat striped"><thead><tr><td class="check-column"><input type="checkbox" class="sidcraft-unl-all" aria-label="' . esc_attr__( 'Select all', 'sidcraft-search-boost-suite' ) . '"></td><th>' . esc_html__( 'Title', 'sidcraft-search-boost-suite' ) . '</th><th>' . esc_html__( 'Categories', 'sidcraft-search-boost-suite' ) . '</th><th>' . esc_html__( 'Status', 'sidcraft-search-boost-suite' ) . '</th><th>' . esc_html__( 'Last modified', 'sidcraft-search-boost-suite' ) . '</th><th>' . esc_html__( 'Address', 'sidcraft-search-boost-suite' ) . '</th></tr></thead><tbody>';
 		foreach ( $items as $post ) {
 			$title  = '' !== get_the_title( $post ) ? get_the_title( $post ) : __( '(no title)', 'sidcraft-search-boost-suite' );
 			$status = get_post_status_object( $post->post_status );
 			echo '<tr><th scope="row" class="check-column"><input type="checkbox" class="sidcraft-unl-id" name="ids[]" value="' . (int) $post->ID . '" aria-label="' . esc_attr( $title ) . '"></th>';
-			echo '<td><strong><a href="' . esc_url( get_edit_post_link( $post->ID ) ) . '">' . esc_html( $title ) . '</a></strong></td><td>' . esc_html( $status ? $status->label : $post->post_status ) . '</td><td>' . esc_html( mysql2date( get_option( 'date_format' ), $post->post_modified ) ) . '</td>';
+			echo '<td><strong><a href="' . esc_url( get_edit_post_link( $post->ID ) ) . '">' . esc_html( $title ) . '</a></strong></td><td>' . esc_html( self::term_names( $post ) ) . '</td><td>' . esc_html( $status ? $status->label : $post->post_status ) . '</td><td>' . esc_html( mysql2date( get_option( 'date_format' ), $post->post_modified ) ) . '</td>';
 			echo '<td>' . ( 'publish' === $post->post_status ? '<a href="' . esc_url( get_permalink( $post ) ) . '">' . esc_html__( 'View', 'sidcraft-search-boost-suite' ) . '</a>' : '&mdash;' ) . '</td></tr>';
 		}
 		echo '</tbody></table><p><button class="button button-primary">' . esc_html__( 'Move selected to Archive', 'sidcraft-search-boost-suite' ) . '</button></p></form>';
 		wp_register_script( 'sidcraft-search-boost-suite-unl', false, array(), SIDCRAFT_RANKBOOST_VERSION, true );
 		wp_enqueue_script( 'sidcraft-search-boost-suite-unl' );
 		wp_add_inline_script( 'sidcraft-search-boost-suite-unl', 'document.querySelectorAll(".sidcraft-unl-all").forEach(function(a){a.addEventListener("change",function(){document.querySelectorAll(".sidcraft-unl-id").forEach(function(c){c.checked=a.checked;});});});' );
+	}
+
+	/** Names of the categories, tags and other terms a post is listed under. */
+	private static function term_names( $post ) {
+		$names = array();
+		foreach ( get_object_taxonomies( $post->post_type, 'names' ) as $tax ) {
+			$t = get_the_terms( $post, $tax );
+			if ( is_array( $t ) ) { foreach ( $t as $term ) { $names[] = $term->name; } }
+		}
+		return $names ? implode( ', ', array_slice( $names, 0, 5 ) ) : '—';
 	}
 
 	private static function tab_urls() {
