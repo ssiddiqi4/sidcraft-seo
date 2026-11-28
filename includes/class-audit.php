@@ -51,31 +51,31 @@ class Sidcraft_RankBoost_Audit {
 		// 1. Title (10)
 		$tl = Sidcraft_RankBoost_Util::len( $title );
 		if ( $tl >= 25 && $tl <= 60 ) { $score += 10; }
-		elseif ( $tl > 0 ) { $score += 5; $add( 'title', 'low', $tl < 25 ? __( 'Title is short (under 25 characters).', 'sidcraft-rankboost' ) : __( 'Title is long and will be cut off in search results.', 'sidcraft-rankboost' ) ); }
-		else { $add( 'title', 'high', __( 'No title.', 'sidcraft-rankboost' ) ); }
+		elseif ( $tl > 0 ) { $score += 5; $add( 'title', 'low', $tl < 25 ? __( 'Title is short (under 25 characters).', 'sidcraft-search-boost-suite' ) : __( 'Title is long and will be cut off in search results.', 'sidcraft-search-boost-suite' ) ); }
+		else { $add( 'title', 'high', __( 'No title.', 'sidcraft-search-boost-suite' ) ); }
 
 		// 2. Description (10)
 		$dl = Sidcraft_RankBoost_Util::len( $desc );
 		if ( $dl >= 70 && $dl <= 160 ) { $score += 10; }
-		elseif ( $dl >= 40 ) { $score += 6; $add( 'desc', 'low', __( 'Description is short; the page has little text to summarise.', 'sidcraft-rankboost' ) ); }
-		else { $add( 'desc', 'medium', __( 'Not enough text to write a useful description.', 'sidcraft-rankboost' ) ); }
+		elseif ( $dl >= 40 ) { $score += 6; $add( 'desc', 'low', __( 'Description is short; the page has little text to summarise.', 'sidcraft-search-boost-suite' ) ); }
+		else { $add( 'desc', 'medium', __( 'Not enough text to write a useful description.', 'sidcraft-search-boost-suite' ) ); }
 
 		// 3. Content length (15)
 		if ( $words >= 300 ) { $score += 15; }
-		elseif ( $words >= 150 ) { $score += 9; $add( 'thin', 'low', sprintf( /* translators: %d: number of words on the page. */ __( 'Short page (%d words). 300+ words ranks more easily.', 'sidcraft-rankboost' ), $words ) ); }
-		else { $add( 'thin', 'medium', sprintf( /* translators: %d: number of words on the page. */ __( 'Thin content (%d words).', 'sidcraft-rankboost' ), $words ) ); }
+		elseif ( $words >= 150 ) { $score += 9; $add( 'thin', 'low', sprintf( /* translators: %d: number of words on the page. */ __( 'Short page (%d words). 300+ words ranks more easily.', 'sidcraft-search-boost-suite' ), $words ) ); }
+		else { $add( 'thin', 'medium', sprintf( /* translators: %d: number of words on the page. */ __( 'Thin content (%d words).', 'sidcraft-search-boost-suite' ), $words ) ); }
 
 		// 4. Headings (10)
 		$heads = Sidcraft_RankBoost_Util::headings( $post );
 		$h1    = count( array_filter( $heads, function ( $h ) { return 1 === $h[0]; } ) );
 		$h2    = count( array_filter( $heads, function ( $h ) { return 2 === $h[0]; } ) );
-		if ( $h1 > 1 ) { $add( 'h1', 'medium', __( 'More than one H1 heading in the content.', 'sidcraft-rankboost' ) ); $score += 4; }
-		elseif ( $words > 600 && $h2 < 2 ) { $add( 'h2', 'low', __( 'Long page without section headings (H2).', 'sidcraft-rankboost' ) ); $score += 6; }
+		if ( $h1 > 1 ) { $add( 'h1', 'medium', __( 'More than one H1 heading in the content.', 'sidcraft-search-boost-suite' ) ); $score += 4; }
+		elseif ( $words > 600 && $h2 < 2 ) { $add( 'h2', 'low', __( 'Long page without section headings (H2).', 'sidcraft-search-boost-suite' ) ); $score += 6; }
 		else { $score += 10; }
 
 		// 5. Image alt text (10) - automatic alt text counts as handled.
 		$imgs = Sidcraft_RankBoost_Util::post_images( $post );
-		if ( ! $imgs ) { $score += 5; $add( 'noimg', 'low', __( 'No images on the page.', 'sidcraft-rankboost' ) ); }
+		if ( ! $imgs ) { $score += 5; $add( 'noimg', 'low', __( 'No images on the page.', 'sidcraft-search-boost-suite' ) ); }
 		else { $score += 10; }
 
 		// 6. Internal links (10)
@@ -92,7 +92,7 @@ class Sidcraft_RankBoost_Audit {
 			$h = wp_parse_url( $href, PHP_URL_HOST );
 			if ( ! $h || $h === $home || 'www.' . $home === $h || $h === 'www.' . $home ) { $links++; }
 		}
-		if ( $links >= 1 || ( 'post' === $post->post_type && Sidcraft_RankBoost_Settings::on( 'related_links' ) ) || ( 'post' !== $post->post_type && Sidcraft_RankBoost_Settings::on( 'related_pages' ) ) ) { $score += 10; } else { $add( 'links', 'low', __( 'No links to other pages on this site.', 'sidcraft-rankboost' ) ); }
+		if ( $links >= 1 || ( 'post' === $post->post_type && Sidcraft_RankBoost_Settings::on( 'related_links' ) ) || ( 'post' !== $post->post_type && Sidcraft_RankBoost_Settings::on( 'related_pages' ) ) ) { $score += 10; } else { $add( 'links', 'low', __( 'No links to other pages on this site.', 'sidcraft-search-boost-suite' ) ); }
 
 		// 7. Focus keyword (10)
 		if ( '' !== $focus ) {
@@ -101,28 +101,28 @@ class Sidcraft_RankBoost_Audit {
 			$first    = Sidcraft_RankBoost_Util::sub( Sidcraft_RankBoost_Util::lower( $q( $text ) ), 0, 600 );
 			$in_text  = false !== Sidcraft_RankBoost_Util::pos( $first, $q( $focus ) );
 			$score   += ( $in_title ? 5 : 0 ) + ( $in_text ? 5 : 0 );
-			if ( ! $in_title ) { $add( 'kw_title', 'low', sprintf( /* translators: %s: main phrase of the page. */ __( 'Main phrase “%s” is not in the title.', 'sidcraft-rankboost' ), $focus ) ); }
-			if ( ! $in_text && $words >= 100 ) { $add( 'kw_intro', 'low', sprintf( /* translators: %s: main phrase of the page. */ __( 'Main phrase “%s” is not in the first paragraph.', 'sidcraft-rankboost' ), $focus ) ); }
+			if ( ! $in_title ) { $add( 'kw_title', 'low', sprintf( /* translators: %s: main phrase of the page. */ __( 'Main phrase “%s” is not in the title.', 'sidcraft-search-boost-suite' ), $focus ) ); }
+			if ( ! $in_text && $words >= 100 ) { $add( 'kw_intro', 'low', sprintf( /* translators: %s: main phrase of the page. */ __( 'Main phrase “%s” is not in the first paragraph.', 'sidcraft-search-boost-suite' ), $focus ) ); }
 		} else { $score += 5; }
 
 		// 8. Slug (5)
 		$slug = (string) $post->post_name;
 		if ( strlen( $slug ) <= 75 && ! preg_match( '/[A-Z_]/', $slug ) ) { $score += 5; }
-		else { $add( 'slug', 'low', __( 'Web address (slug) is very long or has capitals/underscores.', 'sidcraft-rankboost' ) ); }
+		else { $add( 'slug', 'low', __( 'Web address (slug) is very long or has capitals/underscores.', 'sidcraft-search-boost-suite' ) ); }
 
 		// 9. Social image (5)
-		if ( has_post_thumbnail( $post ) || $imgs ) { $score += 5; } else { $add( 'social', 'low', __( 'No image: social shares will show a plain card.', 'sidcraft-rankboost' ) ); }
+		if ( has_post_thumbnail( $post ) || $imgs ) { $score += 5; } else { $add( 'social', 'low', __( 'No image: social shares will show a plain card.', 'sidcraft-search-boost-suite' ) ); }
 
 		// 10. Readability (5)
 		$avg = Sidcraft_RankBoost_Util::avg_sentence_words( $text );
-		if ( $words < 80 || $avg <= 25 ) { $score += 5; } else { $add( 'read', 'low', sprintf( /* translators: %d: average words per sentence. */ __( 'Sentences average %d words; shorter is easier to read.', 'sidcraft-rankboost' ), round( $avg ) ) ); $score += 2; }
+		if ( $words < 80 || $avg <= 25 ) { $score += 5; } else { $add( 'read', 'low', sprintf( /* translators: %d: average words per sentence. */ __( 'Sentences average %d words; shorter is easier to read.', 'sidcraft-search-boost-suite' ), round( $avg ) ) ); $score += 2; }
 
 		// 11. Indexable (5)
-		if ( Sidcraft_RankBoost_Meta::override( $post->ID, 'noindex' ) ) { $add( 'noindex', 'high', __( 'Hidden from search engines (noindex).', 'sidcraft-rankboost' ) ); } else { $score += 5; }
+		if ( Sidcraft_RankBoost_Meta::override( $post->ID, 'noindex' ) ) { $add( 'noindex', 'high', __( 'Hidden from search engines (noindex).', 'sidcraft-search-boost-suite' ) ); } else { $score += 5; }
 
 		// 12. Inbound links (5)
 		$inbound = self::inbound( $post );
-		if ( $inbound > 0 || is_front_page() ) { $score += 5; } else { $add( 'orphan', 'medium', __( 'No other page or menu links here (orphan page).', 'sidcraft-rankboost' ) ); }
+		if ( $inbound > 0 || is_front_page() ) { $score += 5; } else { $add( 'orphan', 'medium', __( 'No other page or menu links here (orphan page).', 'sidcraft-search-boost-suite' ) ); }
 
 		return array( 'score' => max( 0, min( 100, $score ) ), 'issues' => $issues, 'focus' => $focus );
 	}

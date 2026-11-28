@@ -91,7 +91,7 @@ class Sidcraft_RankBoost_Schema {
 	}
 
 	private static function breadcrumbs( $post, $url ) {
-		$items = array( array( 'name' => __( 'Home', 'sidcraft-rankboost' ), 'url' => home_url( '/' ) ) );
+		$items = array( array( 'name' => __( 'Home', 'sidcraft-search-boost-suite' ), 'url' => home_url( '/' ) ) );
 		$anc   = array_reverse( get_post_ancestors( $post ) );
 		foreach ( $anc as $id ) { $items[] = array( 'name' => get_the_title( $id ), 'url' => get_permalink( $id ) ); }
 		if ( 'post' === $post->post_type ) {
@@ -126,6 +126,6 @@ class Sidcraft_RankBoost_Schema {
 		if ( ! $graph ) { return; }
 		$json = wp_json_encode( array( '@context' => 'https://schema.org', '@graph' => $graph ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP );
 		if ( false === $json ) { return; }
-		wp_print_inline_script_tag( $json, array( 'type' => 'application/ld+json', 'class' => 'sidcraft-rankboost-schema' ) );
+		wp_print_inline_script_tag( $json, array( 'type' => 'application/ld+json', 'class' => 'sidcraft-search-boost-suite-schema' ) );
 	}
 }

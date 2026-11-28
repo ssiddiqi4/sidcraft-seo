@@ -12,6 +12,11 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 /** Clean up. Wrapped in a function so no global variables are created. */
 function sidcraft_rankboost_uninstall() {
 	global $wpdb;
+	// Archived pages and posts would be hidden once the plugin is gone, so put them back as drafts.
+	$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->posts} SET post_status = 'draft' WHERE post_status = %s", 'ucar_archive' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- returning our own archived items to a visible status.
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s", '_ucar_prev_status' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- our own post meta.
+	delete_option( 'sidcraft_rankboost_unlinked' );
+	delete_option( 'sidcraft_rankboost_unlinked_state' );
 	$settings = get_option( 'sidcraft_rankboost_settings' );
 	if ( is_array( $settings ) && ! empty( $settings['remove_data'] ) ) {
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'sidcraft_rankboost_redirects' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange -- removing our own tables.
@@ -28,7 +33,7 @@ function sidcraft_rankboost_uninstall() {
 			WP_Filesystem();
 			global $wp_filesystem;
 			foreach ( array( 'pages', 'min' ) as $sub ) {
-				$dir = trailingslashit( $up['basedir'] ) . 'sidcraft-rankboost/' . $sub;
+				$dir = trailingslashit( $up['basedir'] ) . 'sidcraft-search-boost-suite/' . $sub;
 				if ( $wp_filesystem && is_dir( $dir ) ) { $wp_filesystem->delete( $dir, true ); }
 			}
 		}

@@ -98,7 +98,7 @@ class Sidcraft_RankBoost_Suggest {
 		if ( $need_focus && '' !== $focus ) { $with = array_values( array_filter( $cands, function ( $c ) use ( $focus ) { return false !== Sidcraft_RankBoost_Util::ipos( $c, $focus ); } ) ); $cands = $with ? $with : $cands; }
 		$out = array();
 		foreach ( array_slice( $cands, 0, 4 ) as $c ) { $out[] = array( 'kind' => 'title', 'text' => $c, 'apply' => 'title', 'value' => $c, 'note' => '' ); }
-		if ( ! $out ) { $out[] = array( 'kind' => 'text', 'text' => $need_focus ? sprintf( /* translators: %s: main phrase */ __( 'Rename the page so its title contains “%s”.', 'sidcraft-rankboost' ), $focus ) : __( 'Add one or two descriptive words to the page title (what it is and who it is for).', 'sidcraft-rankboost' ), 'apply' => '', 'value' => '', 'note' => '' ); }
+		if ( ! $out ) { $out[] = array( 'kind' => 'text', 'text' => $need_focus ? sprintf( /* translators: %s: main phrase */ __( 'Rename the page so its title contains “%s”.', 'sidcraft-search-boost-suite' ), $focus ) : __( 'Add one or two descriptive words to the page title (what it is and who it is for).', 'sidcraft-search-boost-suite' ), 'apply' => '', 'value' => '', 'note' => '' ); }
 		return $out;
 	}
 
@@ -118,15 +118,15 @@ class Sidcraft_RankBoost_Suggest {
 		if ( $real ) {
 			if ( Sidcraft_RankBoost_Util::len( $built ) >= 70 ) { $cands[] = $built; }
 			$cands[] = $title . ': ' . $built;
-			$cands[] = rtrim( $built, '.!? ' ) . '. ' . sprintf( /* translators: 1: page title, 2: site name */ __( '%1$s on %2$s.', 'sidcraft-rankboost' ), $title, $site );
+			$cands[] = rtrim( $built, '.!? ' ) . '. ' . sprintf( /* translators: 1: page title, 2: site name */ __( '%1$s on %2$s.', 'sidcraft-search-boost-suite' ), $title, $site );
 		}
 		$out = array(); $seen = array();
 		foreach ( $cands as $c ) {
 			$c = Sidcraft_RankBoost_Util::truncate( $c, 158 );
 			$l = Sidcraft_RankBoost_Util::len( $c );
-			if ( $l >= 70 && ! isset( $seen[ $c ] ) ) { $seen[ $c ] = 1; $out[] = array( 'kind' => 'desc', 'text' => $c, 'apply' => 'desc', 'value' => $c, 'note' => sprintf( /* translators: %d: characters */ __( '%d characters', 'sidcraft-rankboost' ), $l ) ); }
+			if ( $l >= 70 && ! isset( $seen[ $c ] ) ) { $seen[ $c ] = 1; $out[] = array( 'kind' => 'desc', 'text' => $c, 'apply' => 'desc', 'value' => $c, 'note' => sprintf( /* translators: %d: characters */ __( '%d characters', 'sidcraft-search-boost-suite' ), $l ) ); }
 		}
-		if ( ! $out ) { $out[] = array( 'kind' => 'text', 'text' => __( 'There is too little text on this page to build a description from. Write one or two sentences that say what the page offers, or fill in the excerpt.', 'sidcraft-rankboost' ), 'apply' => '', 'value' => '', 'note' => '' ); }
+		if ( ! $out ) { $out[] = array( 'kind' => 'text', 'text' => __( 'There is too little text on this page to build a description from. Write one or two sentences that say what the page offers, or fill in the excerpt.', 'sidcraft-search-boost-suite' ), 'apply' => '', 'value' => '', 'note' => '' ); }
 		return array_slice( $out, 0, 3 );
 	}
 
@@ -145,13 +145,13 @@ class Sidcraft_RankBoost_Suggest {
 				$cut  = ( ';' === substr( $prev, -1 ) ) || ( ',' === substr( $prev, -1 ) && in_array( Sidcraft_RankBoost_Util::lower( $x ), array( 'and', 'but', 'so' ), true ) );
 				if ( $cut && $i > 6 && $i < count( $w ) - 6 && abs( $i - $mid ) < $dist ) { $dist = abs( $i - $mid ); $best = $i; }
 			}
-			if ( null === $best ) { $out[] = array( 'kind' => 'text', 'text' => Sidcraft_RankBoost_Util::truncate( $s, 160 ), 'apply' => '', 'value' => '', 'note' => sprintf( /* translators: %d: words */ __( '%d words: find a natural place to start a new sentence.', 'sidcraft-rankboost' ), count( $w ) ) ); }
+			if ( null === $best ) { $out[] = array( 'kind' => 'text', 'text' => Sidcraft_RankBoost_Util::truncate( $s, 160 ), 'apply' => '', 'value' => '', 'note' => sprintf( /* translators: %d: words */ __( '%d words: find a natural place to start a new sentence.', 'sidcraft-search-boost-suite' ), count( $w ) ) ); }
 			else {
 				$a = rtrim( implode( ' ', array_slice( $w, 0, $best ) ), ',;' ) . '.';
 				$bw = array_slice( $w, $best );
 				if ( $bw && in_array( Sidcraft_RankBoost_Util::lower( $bw[0] ), array( 'and', 'but', 'so' ), true ) ) { array_shift( $bw ); }
 				$b = $bw ? self::ucf( implode( ' ', $bw ) ) : '';
-				$out[] = array( 'kind' => 'text', 'text' => $a . ' ' . $b, 'apply' => '', 'value' => '', 'note' => sprintf( /* translators: %d: words */ __( 'Was %d words. Suggested split:', 'sidcraft-rankboost' ), count( $w ) ) );
+				$out[] = array( 'kind' => 'text', 'text' => $a . ' ' . $b, 'apply' => '', 'value' => '', 'note' => sprintf( /* translators: %d: words */ __( 'Was %d words. Suggested split:', 'sidcraft-search-boost-suite' ), count( $w ) ) );
 			}
 			if ( count( $out ) >= 3 ) { break; }
 		}
@@ -174,7 +174,7 @@ class Sidcraft_RankBoost_Suggest {
 			$w = array_slice( $w, 0, 4 );
 			while ( $w && in_array( Sidcraft_RankBoost_Util::lower( trim( end( $w ), '.,' ) ), $stop, true ) ) { array_pop( $w ); }
 			if ( count( $w ) < 2 ) { continue; }
-			$out[] = array( 'kind' => 'text', 'text' => self::title_case( trim( implode( ' ', $w ), '.,;:' ) ), 'apply' => '', 'value' => '', 'note' => sprintf( /* translators: %s: first words of the paragraph */ __( 'Before the section starting “%s”', 'sidcraft-rankboost' ), Sidcraft_RankBoost_Util::truncate( $g[0], 60 ) ) );
+			$out[] = array( 'kind' => 'text', 'text' => self::title_case( trim( implode( ' ', $w ), '.,;:' ) ), 'apply' => '', 'value' => '', 'note' => sprintf( /* translators: %s: first words of the paragraph */ __( 'Before the section starting “%s”', 'sidcraft-search-boost-suite' ), Sidcraft_RankBoost_Util::truncate( $g[0], 60 ) ) );
 		}
 		return $out;
 	}
@@ -185,17 +185,17 @@ class Sidcraft_RankBoost_Suggest {
 		$focus = self::focus( $post ); $F = '' !== $focus ? $focus : Sidcraft_RankBoost_Util::lower( get_the_title( $post ) );
 		$words = Sidcraft_RankBoost_Util::word_count( Sidcraft_RankBoost_Util::post_text( $post ) );
 		$need  = max( 0, 300 - $words );
-		$out   = array( array( 'kind' => 'text', 'text' => sprintf( /* translators: 1: words missing, 2: paragraphs */ __( 'About %1$d more words, roughly %2$d short paragraphs.', 'sidcraft-rankboost' ), $need, max( 1, (int) ceil( $need / 70 ) ) ), 'apply' => '', 'value' => '', 'note' => '' ) );
+		$out   = array( array( 'kind' => 'text', 'text' => sprintf( /* translators: 1: words missing, 2: paragraphs */ __( 'About %1$d more words, roughly %2$d short paragraphs.', 'sidcraft-search-boost-suite' ), $need, max( 1, (int) ceil( $need / 70 ) ) ), 'apply' => '', 'value' => '', 'note' => '' ) );
 		$prompts = array(
-			/* translators: %s: topic */ sprintf( __( 'What %s is, in two sentences', 'sidcraft-rankboost' ), $F ),
-			__( 'Who it is for and what they get from it', 'sidcraft-rankboost' ),
-			__( 'When, where or how to take part', 'sidcraft-rankboost' ),
-			/* translators: %s: topic */ sprintf( __( '3 short questions people ask about %s, each answered in two sentences', 'sidcraft-rankboost' ), $F ),
-			__( 'How to get in touch or take the next step', 'sidcraft-rankboost' ),
+			/* translators: %s: topic */ sprintf( __( 'What %s is, in two sentences', 'sidcraft-search-boost-suite' ), $F ),
+			__( 'Who it is for and what they get from it', 'sidcraft-search-boost-suite' ),
+			__( 'When, where or how to take part', 'sidcraft-search-boost-suite' ),
+			/* translators: %s: topic */ sprintf( __( '3 short questions people ask about %s, each answered in two sentences', 'sidcraft-search-boost-suite' ), $F ),
+			__( 'How to get in touch or take the next step', 'sidcraft-search-boost-suite' ),
 		);
-		foreach ( $prompts as $p ) { $out[] = array( 'kind' => 'text', 'text' => $p, 'apply' => '', 'value' => '', 'note' => __( 'Write about:', 'sidcraft-rankboost' ) ); }
+		foreach ( $prompts as $p ) { $out[] = array( 'kind' => 'text', 'text' => $p, 'apply' => '', 'value' => '', 'note' => __( 'Write about:', 'sidcraft-search-boost-suite' ) ); }
 		foreach ( Sidcraft_RankBoost_Related::related_posts( $post, 3 ) as $r ) {
-			$out[] = array( 'kind' => 'link', 'text' => wp_strip_all_tags( html_entity_decode( get_the_title( $r ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ), 'apply' => '', 'value' => (string) $r->ID, 'note' => __( 'Related page with material you can build on:', 'sidcraft-rankboost' ) );
+			$out[] = array( 'kind' => 'link', 'text' => wp_strip_all_tags( html_entity_decode( get_the_title( $r ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ), 'apply' => '', 'value' => (string) $r->ID, 'note' => __( 'Related page with material you can build on:', 'sidcraft-search-boost-suite' ) );
 		}
 		return $out;
 	}
@@ -208,8 +208,8 @@ class Sidcraft_RankBoost_Suggest {
 		if ( '' === $focus ) { return array(); }
 		$first = $sent ? $sent[0] : '';
 		$F     = self::ucf( $focus );
-		$out   = array( array( 'kind' => 'text', 'text' => sprintf( /* translators: %s: main phrase */ __( '%s: ', 'sidcraft-rankboost' ), $F ) . $first, 'apply' => '', 'value' => '', 'note' => __( 'Open the first paragraph like this:', 'sidcraft-rankboost' ) ) );
-		$out[] = array( 'kind' => 'text', 'text' => sprintf( /* translators: %s: main phrase */ __( 'This page is about %s. ', 'sidcraft-rankboost' ), $focus ) . $first, 'apply' => '', 'value' => '', 'note' => __( 'Or like this:', 'sidcraft-rankboost' ) );
+		$out   = array( array( 'kind' => 'text', 'text' => sprintf( /* translators: %s: main phrase */ __( '%s: ', 'sidcraft-search-boost-suite' ), $F ) . $first, 'apply' => '', 'value' => '', 'note' => __( 'Open the first paragraph like this:', 'sidcraft-search-boost-suite' ) ) );
+		$out[] = array( 'kind' => 'text', 'text' => sprintf( /* translators: %s: main phrase */ __( 'This page is about %s. ', 'sidcraft-search-boost-suite' ), $focus ) . $first, 'apply' => '', 'value' => '', 'note' => __( 'Or like this:', 'sidcraft-search-boost-suite' ) );
 		return $out;
 	}
 
@@ -226,7 +226,7 @@ class Sidcraft_RankBoost_Suggest {
 		foreach ( array_slice( $found, 0, 4, true ) as $a ) {
 			$out[] = array( 'kind' => 'thumb', 'text' => wp_strip_all_tags( html_entity_decode( get_the_title( $a ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ), 'apply' => $can_apply ? 'thumb' : '', 'value' => (string) $a->ID, 'note' => '' );
 		}
-		if ( ! $out ) { $out[] = array( 'kind' => 'text', 'text' => __( 'No image in your media library matches this page. Upload one and name the file after the page topic.', 'sidcraft-rankboost' ), 'apply' => '', 'value' => '', 'note' => '' ); }
+		if ( ! $out ) { $out[] = array( 'kind' => 'text', 'text' => __( 'No image in your media library matches this page. Upload one and name the file after the page topic.', 'sidcraft-search-boost-suite' ), 'apply' => '', 'value' => '', 'note' => '' ); }
 		return $out;
 	}
 

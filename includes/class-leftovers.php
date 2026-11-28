@@ -73,7 +73,7 @@ class Sidcraft_RankBoost_Leftovers {
 		);
 	}
 
-	/** Is this table WordPress core or one of RankBoost's own? $suffix is the name after the site prefix. */
+	/** Is this table WordPress core or one of Search Boost Suite's own? $suffix is the name after the site prefix. */
 	private static function is_core_table( $suffix ) {
 		$suffix = preg_replace( '/^\d+_/', '', $suffix ); // Multisite: "2_posts".
 		if ( in_array( $suffix, array( 'posts', 'postmeta', 'comments', 'commentmeta', 'terms', 'termmeta', 'term_taxonomy', 'term_relationships', 'options', 'links', 'users', 'usermeta', 'blogs', 'blogmeta', 'site', 'sitemeta', 'signups', 'registration_log', 'blog_versions' ), true ) ) { return true; }
@@ -186,24 +186,24 @@ class Sidcraft_RankBoost_Leftovers {
 	 */
 	public static function cleanup( array $ids, array $tables ) {
 		global $wpdb;
-		if ( ! Sidcraft_RankBoost_DbBackup::allowed() ) { return new WP_Error( 'denied', __( 'Not allowed.', 'sidcraft-rankboost' ) ); }
+		if ( ! Sidcraft_RankBoost_DbBackup::allowed() ) { return new WP_Error( 'denied', __( 'Not allowed.', 'sidcraft-search-boost-suite' ) ); }
 		$fresh = self::scan(); $sigs = self::signatures(); $plan = array(); $drop = array();
 		foreach ( $ids as $id ) {
 			if ( ! isset( $fresh['plugins'][ $id ], $sigs[ $id ] ) ) { continue; }
 			$plan[ $id ] = $sigs[ $id ];
 			foreach ( $fresh['plugins'][ $id ]['tables'] as $t ) { if ( in_array( $t['name'], $tables, true ) ) { $drop[] = $t['name']; } }
 		}
-		if ( ! $plan ) { return new WP_Error( 'none', __( 'Nothing to remove. Run the scan again.', 'sidcraft-rankboost' ) ); }
+		if ( ! $plan ) { return new WP_Error( 'none', __( 'Nothing to remove. Run the scan again.', 'sidcraft-search-boost-suite' ) ); }
 
 		// 1. Save a copy of what will be removed.
 		$dir = Sidcraft_RankBoost_DbBackup::dir();
-		if ( '' === $dir ) { return new WP_Error( 'dir', __( 'The safety copy could not be saved (the uploads folder is not writable), so nothing was removed.', 'sidcraft-rankboost' ) ); }
+		if ( '' === $dir ) { return new WP_Error( 'dir', __( 'The safety copy could not be saved (the uploads folder is not writable), so nothing was removed.', 'sidcraft-search-boost-suite' ) ); }
 		$name = 'cleanup-' . gmdate( 'Ymd-His' ) . '-' . bin2hex( random_bytes( 8 ) ) . '.sql';
 		$fh   = fopen( $dir . '/' . $name, 'wb' );
-		if ( ! $fh ) { return new WP_Error( 'file', __( 'The safety copy could not be saved, so nothing was removed.', 'sidcraft-rankboost' ) ); }
+		if ( ! $fh ) { return new WP_Error( 'file', __( 'The safety copy could not be saved, so nothing was removed.', 'sidcraft-search-boost-suite' ) ); }
 		$bad   = false;
 		$write = static function ( $s ) use ( $fh, &$bad ) { if ( false === fwrite( $fh, $s ) ) { $bad = true; } };
-		$write( Sidcraft_RankBoost_DbBackup::header_text( 'Copy of leftovers removed by Sidcraft RankBoost: ' . implode( ', ', array_map( static function ( $p ) { return $p[0]; }, $plan ) ) ) );
+		$write( Sidcraft_RankBoost_DbBackup::header_text( 'Copy of leftovers removed by Sidcraft Search Boost Suite: ' . implode( ', ', array_map( static function ( $p ) { return $p[0]; }, $plan ) ) ) );
 		$ident = '`' . str_replace( '`', '``', $wpdb->options ) . '`';
 		foreach ( $plan as $s ) {
 			foreach ( $s[2] as $p ) {
@@ -216,7 +216,7 @@ class Sidcraft_RankBoost_Leftovers {
 		foreach ( $drop as $t ) { Sidcraft_RankBoost_DbBackup::dump_table( $t, $write ); }
 		$write( Sidcraft_RankBoost_DbBackup::footer_text() );
 		fclose( $fh );
-		if ( $bad ) { wp_delete_file( $dir . '/' . $name ); return new WP_Error( 'write', __( 'The safety copy could not be written completely (disk full?), so nothing was removed.', 'sidcraft-rankboost' ) ); }
+		if ( $bad ) { wp_delete_file( $dir . '/' . $name ); return new WP_Error( 'write', __( 'The safety copy could not be written completely (disk full?), so nothing was removed.', 'sidcraft-search-boost-suite' ) ); }
 
 		// 2. Remove.
 		$n = array( 'options' => 0, 'transients' => 0, 'cron' => 0, 'tables' => 0 );

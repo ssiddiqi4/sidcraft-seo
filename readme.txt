@@ -1,11 +1,11 @@
-=== Sidcraft RankBoost ===
+=== Sidcraft Search Boost Suite ===
 Contributors: ssiddiqi4
 Donate link: https://paypal.me/SSiddiqi275
 Tags: seo, schema, sitemap, redirects, alt text
 Requires at least: 6.2
-Tested up to: 7.1
+Tested up to: 7.2
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,9 +13,9 @@ Hands-off SEO for pages and posts: automatic titles, descriptions, social cards,
 
 == Description ==
 
-**Sidcraft RankBoost optimises every page and post on its own.** Install it, activate it, and it keeps working as you publish and edit. There is nothing to configure and no keywords to enter.
+**Sidcraft Search Boost Suite optimises every page and post on its own.** Install it, activate it, and it keeps working as you publish and edit. There is nothing to configure and no keywords to enter.
 
-Sidcraft RankBoost is an independent plugin by Suhaib Siddiqi. It is not affiliated with, endorsed by or connected to any other SEO product, service or company.
+Sidcraft Search Boost Suite is an independent plugin by Suhaib Siddiqi. It is not affiliated with, endorsed by or connected to any other SEO product, service or company.
 
 = Automatic on every page =
 
@@ -34,7 +34,7 @@ A page cache, HTML/CSS/JavaScript minify, database backup (download database.sql
 
 = Visitor Stats (built in) =
 
-Private, cookie-free visitor statistics in your dashboard (Sidcraft RankBoost > Visitor Stats): visitors, page views, pages per visit, bounce rate, time on page, live visitors, top pages, traffic sources, referring sites, campaigns, countries (with Cloudflare), browsers, systems, devices and broken-link (404) hits. No cookies, no stored IP addresses, nothing sent to another service, and it works with page caches. Exclude roles and your own IP addresses (with an "Add My IP Address" button), respect Do Not Track, export CSV, automatic clean-up of old data.
+Private, cookie-free visitor statistics in your dashboard (Sidcraft Search Boost Suite > Visitor Stats): visitors, page views, pages per visit, bounce rate, time on page, live visitors, top pages, traffic sources, referring sites, campaigns, countries (with Cloudflare), browsers, systems, devices and broken-link (404) hits. No cookies, no stored IP addresses, nothing sent to another service, and it works with page caches. Exclude roles and your own IP addresses (with an "Add My IP Address" button), respect Do Not Track, export CSV, automatic clean-up of old data.
 
 = Self-repairing =
 
@@ -44,6 +44,7 @@ Private, cookie-free visitor statistics in your dashboard (Sidcraft RankBoost > 
 
 * **Broken Links tab.** Scans the links inside your pages, posts and Sidcraft Page Builder layouts, lists the ones that lead nowhere (missing pages, unpublished pages, missing files) and fixes each with a click: use a new address (the closest matching page is suggested), redirect the old address, remove the link but keep its words, or ignore it. Scans repeat daily.
 
+* **Unlinked & Archive tab.** Finds pages and posts that nothing links to (menus, widgets, other content, page-builder layouts, front page and posts page are all checked) and moves the ones you select to a hidden Archive that you can restore from at any time. Nothing is archived without your click. The scan reads the site in small steps, so it stays light on large sites.
 * **One-click fixes.** The overview shows how many pages are good, need work or are poor. Click a score card to see those pages, then fix them in one click: orphan pages get a link from a related page, pages that link nowhere get a related-page list, empty excerpts are written, and very long web addresses are shortened (the old address redirects). Problems that need a person, such as thin content, are listed with plain advice.
 * **Automatic redirects.** When you change a page address, a 301 redirect from the old address is created for you.
 * **Broken links repaired.** A missing address that closely matches a real page (a typo, an old slug, a different ending) is redirected to that page. Everything else is logged so you can decide.
@@ -56,11 +57,11 @@ Text written in Sidcraft Page Builder is read and optimised like normal content.
 
 = Plays well with other SEO plugins =
 
-If Yoast SEO, Rank Math, All in One SEO, SEOPress or The SEO Framework is active, Sidcraft RankBoost stops printing titles, descriptions, social cards, structured data and sitemap changes so nothing is duplicated. Auditing, redirects, alt text and IndexNow keep running.
+If Yoast SEO, Rank Math, All in One SEO, SEOPress or The SEO Framework is active, Sidcraft Search Boost Suite stops printing titles, descriptions, social cards, structured data and sitemap changes so nothing is duplicated. Auditing, redirects, alt text and IndexNow keep running.
 
 = You stay in control =
 
-Every automatic action has an on/off switch under **Sidcraft RankBoost > Settings**. On any single page, the **Sidcraft RankBoost** box on the edit screen lets you override the title, description or main phrase, or hide the page from search engines. You never have to.
+Every automatic action has an on/off switch under **Sidcraft Search Boost Suite > Settings**. On any single page, the **Sidcraft Search Boost Suite** box on the edit screen lets you override the title, description or main phrase, or hide the page from search engines. You never have to.
 
 = What it cannot do =
 
@@ -76,7 +77,7 @@ This plugin can send page addresses to the **IndexNow** protocol endpoint so tha
 * **Service:** IndexNow, operated with participating search engines. Documentation: https://www.indexnow.org/documentation
 * **Terms and privacy:** https://www.indexnow.org/terms and the Microsoft Privacy Statement at https://privacy.microsoft.com/privacystatement
 
-You can turn this off at any time under **Sidcraft RankBoost > Settings** ("Tell Bing & other IndexNow search engines..."). The plugin also serves a plain-text key file at `/{key}.txt` on your site, which IndexNow uses to confirm that you own the site.
+You can turn this off at any time under **Sidcraft Search Boost Suite > Settings** ("Tell Bing & other IndexNow search engines..."). The plugin also serves a plain-text key file at `/{key}.txt` on your site, which IndexNow uses to confirm that you own the site.
 
 **Optional broken-link check of other websites.** If you tick "Broken-link scan also checks links to other websites" (off by default), the plugin sends a lightweight HEAD or GET request to each external address that appears in your content, to see whether it still exists. Only the linked address is requested, nothing about your site or visitors is sent, and only the HTTP status is read. With the option off, only links to your own site are checked, and those requests never leave your server.
 
@@ -84,9 +85,9 @@ No other external services are used. No data is collected by the plugin author.
 
 == Installation ==
 
-1. Upload the `sidcraft-rankboost` folder to `/wp-content/plugins/`, or install it from the Plugins screen.
-2. Activate **Sidcraft RankBoost**.
-3. That is all. Open **Sidcraft RankBoost** in the admin menu to see how your pages score, and press **Run audit now** to check everything straight away.
+1. Upload the `sidcraft-search-boost-suite` folder to `/wp-content/plugins/`, or install it from the Plugins screen.
+2. Activate **Sidcraft Search Boost Suite**.
+3. That is all. Open **Sidcraft Search Boost Suite** in the admin menu to see how your pages score, and press **Run audit now** to check everything straight away.
 
 == Frequently Asked Questions ==
 
@@ -108,7 +109,7 @@ It works with any theme that calls `wp_head()` and the standard title support. I
 
 = I already use Yoast SEO / Rank Math / another SEO plugin. =
 
-Sidcraft RankBoost detects it and stops printing titles, descriptions, social cards, structured data and sitemap changes so nothing is duplicated. Redirects, alt text, the audit and IndexNow still work.
+Sidcraft Search Boost Suite detects it and stops printing titles, descriptions, social cards, structured data and sitemap changes so nothing is duplicated. Redirects, alt text, the audit and IndexNow still work.
 
 = Does it add a sitemap? =
 
@@ -128,26 +129,26 @@ Titles, descriptions and structured data are built per request from data WordPre
 
 = What happens if I uninstall it? =
 
-The plugin stops. Its tables and settings are kept unless you ticked "Delete all Sidcraft RankBoost data when the plugin is deleted" in Settings before deleting it.
+The plugin stops. Its tables and settings are kept unless you ticked "Delete all Sidcraft Search Boost Suite data when the plugin is deleted" in Settings before deleting it.
 
 = Why do I only see "Check" next to an address on the Broken URLs tab? =
 
 Check, Block and Unblock work together with the free plugin **Sidcraft BotVanguard**:
 
 * **Check** works on its own. It looks up the visitor's host name and tells you whether the address belongs to a genuine search engine crawler such as Googlebot or Bingbot, or is not one.
-* **Block** and **Unblock** need Sidcraft BotVanguard to be installed and active. Sidcraft RankBoost shows the buttons only when it finds that plugin, and it does the blocking through it, so the address is added to (or taken off) the BotVanguard block list. Without BotVanguard you only see Check.
+* **Block** and **Unblock** need Sidcraft BotVanguard to be installed and active. Sidcraft Search Boost Suite shows the buttons only when it finds that plugin, and it does the blocking through it, so the address is added to (or taken off) the BotVanguard block list. Without BotVanguard you only see Check.
 
 To get the buttons, install and activate Sidcraft BotVanguard (Plugins > Add New > Upload Plugin, or search for it), then reload the Broken URLs tab. Nothing else needs to be set up. Older versions of the same plugin (Sidcraft Bot Shield, BotVaguard) also work.
 
 = How does Block protect me from blocking Google by mistake? =
 
-Before an address is blocked, Sidcraft RankBoost checks whether it is a genuine search engine crawler. If it is, it is not blocked, because that would remove your pages from search results. An address on your BotVanguard "Never block these addresses" list is shown as "never blocked" and cannot be blocked from here. A blocked address stays on the list until you press Unblock, and you can manage the whole list in BotVanguard.
+Before an address is blocked, Sidcraft Search Boost Suite checks whether it is a genuine search engine crawler. If it is, it is not blocked, because that would remove your pages from search results. An address on your BotVanguard "Never block these addresses" list is shown as "never blocked" and cannot be blocked from here. A blocked address stays on the list until you press Unblock, and you can manage the whole list in BotVanguard.
 
 = Someone keeps asking for addresses like /-/-/-/-/-/-/-/-/-/-. Can I block them? =
 
-Yes, and it is on by default. A real page address never looks like that, so Sidcraft RankBoost treats a request for a path made only of slashes, dashes, dots and underscores (six or more slashes), or a site search for one, as junk. The visitor gets a plain "Forbidden" at once and the address is **blocked for good**. You can see the addresses blocked this way under Settings.
+Yes, and it is on by default. A real page address never looks like that, so Sidcraft Search Boost Suite treats a request for a path made only of slashes, dashes, dots and underscores (six or more slashes), or a site search for one, as junk. The visitor gets a plain "Forbidden" at once and the address is **blocked for good**. You can see the addresses blocked this way under Settings.
 
-* **Permanent blocking needs Sidcraft BotVanguard.** RankBoost adds the address to the BotVanguard block list, which you can edit under BotVanguard > Bots. Without BotVanguard the junk request is still refused every time, but the address cannot be blocked for good.
+* **Permanent blocking needs Sidcraft BotVanguard.** Search Boost Suite adds the address to the BotVanguard block list, which you can edit under BotVanguard > Bots. Without BotVanguard the junk request is still refused every time, but the address cannot be blocked for good.
 * **Safety:** genuine search engine crawlers (checked by reverse DNS), addresses on your BotVanguard "Never block these addresses" list, and logged-in users are never blocked.
 * **More patterns:** under Settings > "Junk paths: more patterns" add words or pieces of an address, one per line (at least 4 characters). A visitor whose address or search contains one of them is treated the same way. For example `wp-content/plugins/zzz` or `/.env`.
 * **Switch it off:** untick "Block for good an address that asks for a junk path" under Settings.
@@ -170,6 +171,15 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 == Changelog ==
 
+= 2.2.0 =
+* Renamed to **Sidcraft Search Boost Suite** (slug `sidcraft-search-boost-suite`), as requested by the WordPress.org plugin review team. Settings and data are kept.
+* New: **Unlinked & Archive** tab (merged from the Sidcraft Unlinked Content Archive plugin). Lists pages and posts that nothing links to and moves chosen ones to a restorable Archive. Items archived with the former plugin appear in the same Archive view.
+* New: **Add a folder** tool on the Broken Links tab (merged from the Sidcraft Broken Link Fixer plugin): when pages moved into a folder, such as /blog/, one click adds it to every broken address that then reaches a published page. A preview shows the count first. The suggestions, replace, redirect and remove-link actions of that plugin were already part of Broken Links.
+* Performance: the unlinked scan reads 100 items at a time, reads their custom fields in one query per step, never loads all posts into memory and continues in the background when it needs more than 20 seconds.
+* If you used the stand-alone Sidcraft Broken Link Fixer or Sidcraft Unlinked Content Archive plugins, deactivate them: this plugin replaces them.
+* Uninstall puts any archived items back as drafts so nothing stays hidden.
+* Tested up to WordPress 7.2.
+
 = 2.1.0 =
 * New: database backup. Speed & Database, Database has a "Download database.sql" button that saves every table of the site (structure and rows) as one SQL file you can import with phpMyAdmin or the mysql command. It is built in small pieces while it downloads, needs an administrator (a super admin on multisite) and a valid security check, and is never stored on the server.
 * New: leftovers from deleted plugins. A scan recognises 50 popular plugins (Yoast SEO, Rank Math, WooCommerce, Elementor, Jetpack, Wordfence, WPForms, Gravity Forms and others) and lists those whose plugin folder is no longer on the site, with the settings, temporary cache entries, scheduled tasks and tables they left behind. A plugin that is only deactivated is never listed, and a WooCommerce extension keeps WooCommerce's data safe. One button removes the ticked ones. Settings, cache entries and scheduled tasks are ticked for you; tables (which can hold orders, entries or logs) are never ticked for you. Before anything is deleted a copy of the removed settings and tables is saved as an SQL file in a private folder, with a download button, so the clean-up can be undone. Tables nobody recognises are only listed. Posts, pages and their custom fields are never touched.
@@ -181,7 +191,7 @@ No. See "External services" for the one optional request the plugin makes (Index
 * Plugin Check clean-up: the lightweight Visitor Stats endpoint now uses wp_parse_url() and guards direct access in the way WordPress.org expects, and the report no longer asks for extra execution time.
 
 = 2.0.5 =
-* Fix: the Block, Unblock and Check buttons next to an address on the Broken URLs tab disappeared after Sidcraft Bot Shield was renamed. Sidcraft RankBoost now works with Sidcraft BotVanguard (the new name of the plugin), and still with the earlier names.
+* Fix: the Block, Unblock and Check buttons next to an address on the Broken URLs tab disappeared after Sidcraft Bot Shield was renamed. Sidcraft Search Boost Suite now works with Sidcraft BotVanguard (the new name of the plugin), and still with the earlier names.
 
 = 2.0.4 =
 * Fix: PHP notices written to the error log on every request to an unusual address (a missing page, a bot probe, a URL with a second https:// in it). The page address used for the social tags is now built from the request path only, without the query string.
@@ -199,7 +209,7 @@ No. See "External services" for the one optional request the plugin makes (Index
 
 = 2.0.0 =
 * Performance: fixed the admin slowing down after the plugin had been active for a while. Background scans (broken links, audit, cache preload) no longer overlap, take turns with a lock, wait while the server is busy, and cap their own loopback requests. Visitor Stats no longer stores one transient per visitor in the options table (old ones are cleaned up daily), and the dashboard widget is cached.
-* Renamed to **Sidcraft RankBoost** (slug `sidcraft-rankboost`) and new text domain `sidcraft-rankboost`.
+* Renamed to **Sidcraft Search Boost Suite** (slug `sidcraft-search-boost-suite`) and new text domain `sidcraft-search-boost-suite`.
 * Review fix: the plugin no longer forces indexing or sitemaps on. It respects Settings > Reading > "Discourage search engines from indexing this site", and it no longer removes a noindex rule added by WordPress or another plugin.
 * Review fix: sitemap links now use `get_sitemap_url( 'index' )` instead of a fixed `/wp-sitemap.xml` path, so they work on subdirectory installs and sites without pretty permalinks.
 * Review fix: the admin stylesheet is only loaded on the plugin's own screens and on post lists that show the score badge, instead of every admin page.
@@ -270,7 +280,7 @@ No. See "External services" for the one optional request the plugin makes (Index
 * Broken URLs tab: when many broken addresses start with the same folder (for example /itm/), one click marks that folder as “gone for good”. The site answers 410 Gone, which makes Google stop asking, and the addresses leave the list. A folder where a real page lives cannot be marked.
 
 = 1.5.0 =
-* New: edit the SEO of any page by hand. A box on the editing screen and an “Edit SEO” screen inside RankBoost (Pages & Posts) let you set the SEO title, meta description, main phrase, canonical address, noindex and nofollow, and the social share title, text and image. Empty fields stay automatic. A live preview shows how the page looks in search results.
+* New: edit the SEO of any page by hand. A box on the editing screen and an “Edit SEO” screen inside Search Boost Suite (Pages & Posts) let you set the SEO title, meta description, main phrase, canonical address, noindex and nofollow, and the social share title, text and image. Empty fields stay automatic. A live preview shows how the page looks in search results.
 
 = 1.4.9 =
 * Broken URLs tab: an address on the Sidcraft Bot Shield never-block list shows “never blocked” and cannot be blocked from here.
@@ -355,7 +365,7 @@ Fixes minified scripts being blocked as insecure content on https sites. Recomme
 Faster Visitor Stats: page views are counted by a lightweight endpoint, so the admin stays responsive under traffic.
 
 = 2.0.0 =
-Renamed to Sidcraft RankBoost. Also fixes the WordPress.org review items: indexing and sitemap settings are now respected, and sitemap links work on every permalink setup.
+Renamed to Sidcraft Search Boost Suite. Also fixes the WordPress.org review items: indexing and sitemap settings are now respected, and sitemap links work on every permalink setup.
 
 = 1.8.3 =
 Code tidy-up only.

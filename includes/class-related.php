@@ -70,11 +70,11 @@ class Sidcraft_RankBoost_Related {
 		if ( ! $items ) { return $content; }
 		$li = '';
 		foreach ( $items as $p ) { $li .= '<li><a href="' . esc_url( get_permalink( $p ) ) . '">' . esc_html( wp_strip_all_tags( get_the_title( $p ) ) ) . '</a></li>'; }
-		$title = esc_html__( 'You may also like', 'sidcraft-rankboost' );
+		$title = esc_html__( 'You may also like', 'sidcraft-search-boost-suite' );
 		$style = 'max-width:1100px;margin:40px auto 0;padding:0 24px';
 		if ( 'open' === Sidcraft_RankBoost_Settings::get( 'related_style' ) ) {
-			return $content . '<nav class="sidcraft-rankboost-related" aria-label="' . esc_attr__( 'Related pages', 'sidcraft-rankboost' ) . '" style="' . esc_attr( $style ) . '"><h2 style="font-size:1.3em">' . $title . '</h2><ul>' . $li . '</ul></nav>';
+			return $content . '<nav class="sidcraft-search-boost-suite-related" aria-label="' . esc_attr__( 'Related pages', 'sidcraft-search-boost-suite' ) . '" style="' . esc_attr( $style ) . '"><h2 style="font-size:1.3em">' . $title . '</h2><ul>' . $li . '</ul></nav>';
 		}
-		return $content . '<nav class="sidcraft-rankboost-related" aria-label="' . esc_attr__( 'Related pages', 'sidcraft-rankboost' ) . '" style="' . esc_attr( $style ) . '"><details><summary style="cursor:pointer;font-weight:600">' . $title . '</summary><ul>' . $li . '</ul></details></nav>';
+		return $content . '<nav class="sidcraft-search-boost-suite-related" aria-label="' . esc_attr__( 'Related pages', 'sidcraft-search-boost-suite' ) . '" style="' . esc_attr( $style ) . '"><details><summary style="cursor:pointer;font-weight:600">' . $title . '</summary><ul>' . $li . '</ul></details></nav>';
 	}
 }

@@ -9,27 +9,27 @@ class Sidcraft_RankBoost_Fixer {
 	/** Issues that can be fixed automatically, with the wording shown on the button. */
 	public static function catalog() {
 		return array(
-			'orphan' => array( 'label' => __( 'Link to these pages', 'sidcraft-rankboost' ), 'confirm' => '', 'hint' => __( 'Adds each page to the “You may also like” list of a related page, so it gets a link from somewhere.', 'sidcraft-rankboost' ) ),
-			'links'  => array( 'label' => __( 'Add related-page lists', 'sidcraft-rankboost' ), 'confirm' => '', 'hint' => __( 'Turns on the “You may also like” list for pages that link nowhere.', 'sidcraft-rankboost' ) ),
-			'slug'   => array( 'label' => __( 'Shorten web addresses', 'sidcraft-rankboost' ), 'confirm' => __( 'Shorten these web addresses? The old addresses will keep working through automatic redirects.', 'sidcraft-rankboost' ), 'hint' => __( 'Shortens very long web addresses. The old address redirects to the new one.', 'sidcraft-rankboost' ) ),
-			'excerpt' => array( 'label' => __( 'Write missing excerpts', 'sidcraft-rankboost' ), 'confirm' => '', 'hint' => __( 'Writes a short excerpt for pages and posts that have none. Excerpts you wrote are never changed.', 'sidcraft-rankboost' ) ),
+			'orphan' => array( 'label' => __( 'Link to these pages', 'sidcraft-search-boost-suite' ), 'confirm' => '', 'hint' => __( 'Adds each page to the “You may also like” list of a related page, so it gets a link from somewhere.', 'sidcraft-search-boost-suite' ) ),
+			'links'  => array( 'label' => __( 'Add related-page lists', 'sidcraft-search-boost-suite' ), 'confirm' => '', 'hint' => __( 'Turns on the “You may also like” list for pages that link nowhere.', 'sidcraft-search-boost-suite' ) ),
+			'slug'   => array( 'label' => __( 'Shorten web addresses', 'sidcraft-search-boost-suite' ), 'confirm' => __( 'Shorten these web addresses? The old addresses will keep working through automatic redirects.', 'sidcraft-search-boost-suite' ), 'hint' => __( 'Shortens very long web addresses. The old address redirects to the new one.', 'sidcraft-search-boost-suite' ) ),
+			'excerpt' => array( 'label' => __( 'Write missing excerpts', 'sidcraft-search-boost-suite' ), 'confirm' => '', 'hint' => __( 'Writes a short excerpt for pages and posts that have none. Excerpts you wrote are never changed.', 'sidcraft-search-boost-suite' ) ),
 		);
 	}
 
 	/** Advice for issues that need a person. */
 	public static function advice( $id ) {
 		$a = array(
-			'thin'     => __( 'Needs a person: add more useful text (300+ words).', 'sidcraft-rankboost' ),
-			'desc'     => __( 'Needs a person: add a few sentences of text, or write an excerpt.', 'sidcraft-rankboost' ),
-			'read'     => __( 'Needs a person: split long sentences.', 'sidcraft-rankboost' ),
-			'h2'       => __( 'Needs a person: add section headings (H2).', 'sidcraft-rankboost' ),
-			'title'    => __( 'Needs a person: make the title more descriptive.', 'sidcraft-rankboost' ),
-			'kw_title' => __( 'Needs a person: use the main phrase in the title.', 'sidcraft-rankboost' ),
-			'kw_intro' => __( 'Needs a person: use the main phrase in the first paragraph.', 'sidcraft-rankboost' ),
-			'noimg'    => __( 'Needs a person: add an image.', 'sidcraft-rankboost' ),
-			'social'   => __( 'Needs a person: add a featured image.', 'sidcraft-rankboost' ),
-			'h1'       => __( 'Needs a person: keep one main heading (H1).', 'sidcraft-rankboost' ),
-			'noindex'  => __( 'Your choice: this page is hidden on purpose.', 'sidcraft-rankboost' ),
+			'thin'     => __( 'Needs a person: add more useful text (300+ words).', 'sidcraft-search-boost-suite' ),
+			'desc'     => __( 'Needs a person: add a few sentences of text, or write an excerpt.', 'sidcraft-search-boost-suite' ),
+			'read'     => __( 'Needs a person: split long sentences.', 'sidcraft-search-boost-suite' ),
+			'h2'       => __( 'Needs a person: add section headings (H2).', 'sidcraft-search-boost-suite' ),
+			'title'    => __( 'Needs a person: make the title more descriptive.', 'sidcraft-search-boost-suite' ),
+			'kw_title' => __( 'Needs a person: use the main phrase in the title.', 'sidcraft-search-boost-suite' ),
+			'kw_intro' => __( 'Needs a person: use the main phrase in the first paragraph.', 'sidcraft-search-boost-suite' ),
+			'noimg'    => __( 'Needs a person: add an image.', 'sidcraft-search-boost-suite' ),
+			'social'   => __( 'Needs a person: add a featured image.', 'sidcraft-search-boost-suite' ),
+			'h1'       => __( 'Needs a person: keep one main heading (H1).', 'sidcraft-search-boost-suite' ),
+			'noindex'  => __( 'Your choice: this page is hidden on purpose.', 'sidcraft-search-boost-suite' ),
 		);
 		return isset( $a[ $id ] ) ? $a[ $id ] : '';
 	}
@@ -146,18 +146,18 @@ class Sidcraft_RankBoost_Fixer {
 			case 'orphan':
 				$n = self::orphans();
 				/* translators: %d: number of pages. */
-				return array( $n, sprintf( _n( '%d page now has a link from a related page.', '%d pages now have a link from a related page.', $n, 'sidcraft-rankboost' ), $n ) );
+				return array( $n, sprintf( _n( '%d page now has a link from a related page.', '%d pages now have a link from a related page.', $n, 'sidcraft-search-boost-suite' ), $n ) );
 			case 'links':
 				self::links();
-				return array( 1, __( 'The “You may also like” list is now on for pages that link nowhere.', 'sidcraft-rankboost' ) );
+				return array( 1, __( 'The “You may also like” list is now on for pages that link nowhere.', 'sidcraft-search-boost-suite' ) );
 			case 'slug':
 				$n = self::slugs();
 				/* translators: %d: number of pages. */
-				return array( $n, sprintf( _n( '%d web address shortened (the old one redirects).', '%d web addresses shortened (the old ones redirect).', $n, 'sidcraft-rankboost' ), $n ) );
+				return array( $n, sprintf( _n( '%d web address shortened (the old one redirects).', '%d web addresses shortened (the old ones redirect).', $n, 'sidcraft-search-boost-suite' ), $n ) );
 			case 'excerpt':
 				$n = self::excerpts();
 				/* translators: %d: number of pages. */
-				return array( $n, sprintf( _n( 'Excerpt written for %d page.', 'Excerpts written for %d pages.', $n, 'sidcraft-rankboost' ), $n ) );
+				return array( $n, sprintf( _n( 'Excerpt written for %d page.', 'Excerpts written for %d pages.', $n, 'sidcraft-search-boost-suite' ), $n ) );
 		}
 		return array( 0, '' );
 	}
@@ -262,7 +262,7 @@ class Sidcraft_RankBoost_Fixer {
 		Sidcraft_RankBoost_Images::fix_library( 300 );
 		self::orphans();
 		self::recheck();
-		return __( 'Done. Re-checking every page now; the scores update as it goes.', 'sidcraft-rankboost' );
+		return __( 'Done. Re-checking every page now; the scores update as it goes.', 'sidcraft-search-boost-suite' );
 	}
 
 	/** Mark everything for a new audit. The Overview screen then re-checks page by page without long requests. */

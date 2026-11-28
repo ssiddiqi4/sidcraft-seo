@@ -1,15 +1,15 @@
 <?php
 /**
- * Plugin Name:       Sidcraft RankBoost
+ * Plugin Name:       Sidcraft Search Boost Suite
  * Description:       Hands-off SEO for WordPress pages and posts: automatic titles and descriptions, social cards, structured data, sitemap, redirects, image alt text, instant search-engine notification and a daily self-audit, speed tools and private visitor statistics. Works out of the box with no setup.
- * Version:           2.1.0
+ * Version:           2.2.0
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Suhaib Siddiqi
  * Author URI:        https://profiles.wordpress.org/ssiddiqi4/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       sidcraft-rankboost
+ * Text Domain:       sidcraft-search-boost-suite
  *
  * @package Sidcraft_RankBoost
  */
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SIDCRAFT_RANKBOOST_VERSION', '2.1.0' );
+define( 'SIDCRAFT_RANKBOOST_VERSION', '2.2.0' );
 define( 'SIDCRAFT_RANKBOOST_FILE', __FILE__ );
 define( 'SIDCRAFT_RANKBOOST_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -40,6 +40,7 @@ require_once SIDCRAFT_RANKBOOST_DIR . 'includes/class-indexnow.php';
 require_once SIDCRAFT_RANKBOOST_DIR . 'includes/class-audit.php';
 require_once SIDCRAFT_RANKBOOST_DIR . 'includes/class-fixer.php';
 require_once SIDCRAFT_RANKBOOST_DIR . 'includes/class-links.php';
+require_once SIDCRAFT_RANKBOOST_DIR . 'includes/class-unlinked.php';
 require_once SIDCRAFT_RANKBOOST_DIR . 'includes/class-suggest.php';
 require_once SIDCRAFT_RANKBOOST_DIR . 'includes/class-editor.php';
 require_once SIDCRAFT_RANKBOOST_DIR . 'includes/class-minify.php';
@@ -65,7 +66,7 @@ register_activation_hook( __FILE__, array( 'Sidcraft_RankBoost_Audit', 'schedule
 register_activation_hook( __FILE__, array( 'Sidcraft_VS_DB', 'install' ) );
 register_deactivation_hook( __FILE__, array( 'Sidcraft_RankBoost_Audit', 'unschedule' ) );
 register_deactivation_hook( __FILE__, function () { wp_clear_scheduled_hook( 'sidcraft_vs_purge' ); } );
-register_deactivation_hook( __FILE__, function () { wp_clear_scheduled_hook( Sidcraft_RankBoost_DbClean::HOOK ); wp_clear_scheduled_hook( Sidcraft_RankBoost_Cache::CLEAR_HOOK ); wp_clear_scheduled_hook( Sidcraft_RankBoost_Cache::HOOK, array( 0 ) ); Sidcraft_RankBoost_Cache::clear_all(); } );
+register_deactivation_hook( __FILE__, function () { wp_clear_scheduled_hook( Sidcraft_RankBoost_DbClean::HOOK ); wp_clear_scheduled_hook( Sidcraft_RankBoost_Cache::CLEAR_HOOK ); wp_clear_scheduled_hook( Sidcraft_RankBoost_Cache::HOOK, array( 0 ) ); Sidcraft_RankBoost_Cache::clear_all(); wp_clear_scheduled_hook( Sidcraft_RankBoost_Unlinked::EVENT ); } );
 
 add_action(
 	'plugins_loaded',
@@ -78,6 +79,7 @@ add_action(
 		Sidcraft_RankBoost_IndexNow::init();
 		Sidcraft_RankBoost_Audit::init();
 		Sidcraft_RankBoost_Links::init();
+		Sidcraft_RankBoost_Unlinked::init();
 		Sidcraft_RankBoost_Speed::init();
 		Sidcraft_RankBoost_Cache::init();
 		Sidcraft_RankBoost_Minify::init();

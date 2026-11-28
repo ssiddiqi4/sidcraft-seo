@@ -99,8 +99,8 @@ class Sidcraft_RankBoost_Speed {
 
 	/** Options for a "every N days" drop-down. */
 	public static function day_options() {
-		$o = array( 0 => __( 'Never', 'sidcraft-rankboost' ), 1 => __( 'Every day at 12:01 AM', 'sidcraft-rankboost' ) );
-		for ( $i = 2; $i <= 180; $i++ ) { /* translators: %d: number of days */ $o[ $i ] = sprintf( __( 'Every %d days at 12:01 AM', 'sidcraft-rankboost' ), $i ); }
+		$o = array( 0 => __( 'Never', 'sidcraft-search-boost-suite' ), 1 => __( 'Every day at 12:01 AM', 'sidcraft-search-boost-suite' ) );
+		for ( $i = 2; $i <= 180; $i++ ) { /* translators: %d: number of days */ $o[ $i ] = sprintf( __( 'Every %d days at 12:01 AM', 'sidcraft-search-boost-suite' ), $i ); }
 		return $o;
 	}
 

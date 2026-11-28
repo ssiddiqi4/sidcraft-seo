@@ -18,12 +18,12 @@ class Sidcraft_RankBoost_Links {
 
 	public static function reasons() {
 		return array(
-			'missing'     => __( 'Page not found (404)', 'sidcraft-rankboost' ),
-			'unpublished' => __( 'Points to a page that is not published', 'sidcraft-rankboost' ),
-			'redirected'  => __( 'Only works through a redirect', 'sidcraft-rankboost' ),
-			'file'        => __( 'File is missing', 'sidcraft-rankboost' ),
-			'gone'        => __( 'Page not found (404)', 'sidcraft-rankboost' ),
-			'dns'         => __( 'Website could not be found', 'sidcraft-rankboost' ),
+			'missing'     => __( 'Page not found (404)', 'sidcraft-search-boost-suite' ),
+			'unpublished' => __( 'Points to a page that is not published', 'sidcraft-search-boost-suite' ),
+			'redirected'  => __( 'Only works through a redirect', 'sidcraft-search-boost-suite' ),
+			'file'        => __( 'File is missing', 'sidcraft-search-boost-suite' ),
+			'gone'        => __( 'Page not found (404)', 'sidcraft-search-boost-suite' ),
+			'dns'         => __( 'Website could not be found', 'sidcraft-search-boost-suite' ),
 		);
 	}
 
@@ -253,6 +253,45 @@ class Sidcraft_RankBoost_Links {
 		return $count;
 	}
 
+	/** Put a folder name into an address that points to the right page but lacks it (for example /my-post/ becomes /blog/my-post/). Empty when not applicable. */
+	public static function insert_segment( $url, $segment ) {
+		$seg = trim( (string) $segment, '/ ' );
+		if ( '' === $seg || ! preg_match( '#^[A-Za-z0-9._~%/-]+$#', $seg ) ) { return ''; }
+		$home = untrailingslashit( home_url() );
+		$hp   = (string) wp_parse_url( $home, PHP_URL_PATH );
+		if ( 0 === strpos( $url, '/' ) && 0 !== strpos( $url, '//' ) ) {
+			$rest = ( '' !== $hp && 0 === strpos( $url, $hp . '/' ) ) ? substr( $url, strlen( $hp ) ) : ( '' === $hp ? $url : '' );
+			if ( '' === $rest ) { return ''; }
+			$base = $hp;
+		} elseif ( 0 === stripos( $url, $home . '/' ) || 0 === stripos( $url, $home . '?' ) ) {
+			$base = $home;
+			$rest = substr( $url, strlen( $home ) );
+		} else {
+			return '';
+		}
+		if ( '' === $rest || '/' !== $rest[0] || 0 === stripos( $rest, '/' . $seg . '/' ) || 0 === strcasecmp( $rest, '/' . $seg ) ) { return ''; }
+		return $base . '/' . $seg . $rest;
+	}
+
+	/** Apply (or just count) the folder fix for every listed address on this site. Returns the number of addresses fixed. */
+	public static function segment_fix( $segment, $apply ) {
+		$n     = 0;
+		$items = self::visible();
+		$seen  = array();
+		foreach ( $items as $it ) {
+			if ( ! $it['internal'] || isset( $seen[ $it['post_id'] . '|' . $it['url'] ] ) ) { continue; }
+			$new = self::insert_segment( $it['url'], $segment );
+			if ( '' === $new ) { continue; }
+			$abs = 0 === strpos( $new, '/' ) ? home_url( $new ) : $new;
+			$id  = url_to_postid( $abs );
+			if ( ! $id || 'publish' !== get_post_status( $id ) ) { continue; }
+			$seen[ $it['post_id'] . '|' . $it['url'] ] = 1;
+			if ( ! $apply ) { ++$n; continue; }
+			if ( current_user_can( 'edit_post', $it['post_id'] ) && self::replace( $it['post_id'], $it['url'], $new ) ) { ++$n; self::rescan( $it['post_id'] ); }
+		}
+		return $n;
+	}
+
 	/** Remove the link but keep its words. */
 	public static function unlink( $post_id, $old ) {
 		$post = get_post( $post_id );
@@ -279,33 +318,33 @@ class Sidcraft_RankBoost_Links {
 	/** Apply one repair to one list entry. Returns a short message. */
 	public static function repair( $id, $how, $new = '' ) {
 		$items = self::items();
-		if ( ! isset( $items[ $id ] ) ) { return __( 'That link is no longer in the list.', 'sidcraft-rankboost' ); }
+		if ( ! isset( $items[ $id ] ) ) { return __( 'That link is no longer in the list.', 'sidcraft-search-boost-suite' ); }
 		$it = $items[ $id ];
 		if ( 'ignore' === $how ) {
 			$ign   = self::ignored();
 			$ign[] = md5( $it['url'] );
 			update_option( self::IGNORED, array_values( array_unique( $ign ) ), false );
-			return __( 'Link ignored. It will not be listed again.', 'sidcraft-rankboost' );
+			return __( 'Link ignored. It will not be listed again.', 'sidcraft-search-boost-suite' );
 		}
-		if ( ! current_user_can( 'edit_post', $it['post_id'] ) ) { return __( 'You are not allowed to edit that page.', 'sidcraft-rankboost' ); }
+		if ( ! current_user_can( 'edit_post', $it['post_id'] ) ) { return __( 'You are not allowed to edit that page.', 'sidcraft-search-boost-suite' ); }
 		$new = esc_url_raw( trim( $new ) );
 		if ( 'unlink' === $how ) {
 			self::unlink( $it['post_id'], $it['url'] );
 			unset( $items[ $id ] ); self::save_items( $items ); self::rescan( $it['post_id'] );
-			return __( 'Link removed. The words stay on the page.', 'sidcraft-rankboost' );
+			return __( 'Link removed. The words stay on the page.', 'sidcraft-search-boost-suite' );
 		}
-		if ( '' === $new ) { return __( 'Type or choose a new address first.', 'sidcraft-rankboost' ); }
+		if ( '' === $new ) { return __( 'Type or choose a new address first.', 'sidcraft-search-boost-suite' ); }
 		if ( 'redirect' === $how ) {
-			if ( ! $it['internal'] ) { return __( 'Redirects only work for addresses on your own site.', 'sidcraft-rankboost' ); }
-			if ( ! Sidcraft_RankBoost_Redirects::add( $it['url'], $new ) ) { return __( 'Could not save that redirect: check the address.', 'sidcraft-rankboost' ); }
+			if ( ! $it['internal'] ) { return __( 'Redirects only work for addresses on your own site.', 'sidcraft-search-boost-suite' ); }
+			if ( ! Sidcraft_RankBoost_Redirects::add( $it['url'], $new ) ) { return __( 'Could not save that redirect: check the address.', 'sidcraft-search-boost-suite' ); }
 			foreach ( $items as $k => $o ) { if ( $o['url'] === $it['url'] ) { unset( $items[ $k ] ); } }
 			self::save_items( $items );
-			return __( 'Redirect saved. Everyone who follows the old address now arrives at the new one.', 'sidcraft-rankboost' );
+			return __( 'Redirect saved. Everyone who follows the old address now arrives at the new one.', 'sidcraft-search-boost-suite' );
 		}
 		$n = self::replace( $it['post_id'], $it['url'], $new );
 		unset( $items[ $id ] ); self::save_items( $items ); self::rescan( $it['post_id'] );
 		/* translators: %d: number of places changed. */
-		return $n ? sprintf( _n( 'Link updated (%d place).', 'Link updated (%d places).', $n, 'sidcraft-rankboost' ), $n ) : __( 'Nothing to change: the link was not found in the page text.', 'sidcraft-rankboost' );
+		return $n ? sprintf( _n( 'Link updated (%d place).', 'Link updated (%d places).', $n, 'sidcraft-search-boost-suite' ), $n ) : __( 'Nothing to change: the link was not found in the page text.', 'sidcraft-search-boost-suite' );
 	}
 
 	/** Apply the suggested address to every entry that has one. */
@@ -318,6 +357,6 @@ class Sidcraft_RankBoost_Links {
 			}
 		}
 		/* translators: %d: number of links. */
-		return sprintf( _n( '%d link repaired using the closest matching page.', '%d links repaired using the closest matching page.', $n, 'sidcraft-rankboost' ), $n );
+		return sprintf( _n( '%d link repaired using the closest matching page.', '%d links repaired using the closest matching page.', $n, 'sidcraft-search-boost-suite' ), $n );
 	}
 }

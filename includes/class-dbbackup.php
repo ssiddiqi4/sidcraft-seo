@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  */
 class Sidcraft_RankBoost_DbBackup {
 
-	const SUBDIR = 'sidcraft-rankboost/backups';
+	const SUBDIR = 'sidcraft-search-boost-suite/backups';
 
 	/** Only administrators, and on a multisite network only super admins, may read a full dump. */
 	public static function allowed() {
@@ -98,15 +98,15 @@ class Sidcraft_RankBoost_DbBackup {
 	/** SQL file header, so the file says where it came from and restores cleanly. */
 	public static function header_text( $what ) {
 		global $wpdb;
-		return "-- Sidcraft RankBoost database backup\n-- {$what}\n-- Site: " . home_url( '/' ) . "\n-- Date (UTC): " . gmdate( 'Y-m-d H:i:s' ) . "\n-- WordPress " . get_bloginfo( 'version' ) . ' / MySQL ' . $wpdb->db_version() . "\n--\n-- Restore with phpMyAdmin (Import) or: mysql -u USER -p DATABASE < database.sql\n\n/*!40101 SET NAMES utf8mb4 */;\n/*!40103 SET TIME_ZONE='+00:00' */;\n/*!40014 SET FOREIGN_KEY_CHECKS=0 */;\n/*!40101 SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\n\n";
+		return "-- Sidcraft Search Boost Suite database backup\n-- {$what}\n-- Site: " . home_url( '/' ) . "\n-- Date (UTC): " . gmdate( 'Y-m-d H:i:s' ) . "\n-- WordPress " . get_bloginfo( 'version' ) . ' / MySQL ' . $wpdb->db_version() . "\n--\n-- Restore with phpMyAdmin (Import) or: mysql -u USER -p DATABASE < database.sql\n\n/*!40101 SET NAMES utf8mb4 */;\n/*!40103 SET TIME_ZONE='+00:00' */;\n/*!40014 SET FOREIGN_KEY_CHECKS=0 */;\n/*!40101 SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\n\n";
 	}
 
 	public static function footer_text() { return "\n/*!40014 SET FOREIGN_KEY_CHECKS=1 */;\n-- End of backup\n"; }
 
 	/** Send the whole database to the browser as database.sql. Does not return. */
 	public static function download() {
-		if ( ! self::allowed() ) { wp_die( esc_html__( 'Not allowed.', 'sidcraft-rankboost' ), 403 ); }
-		if ( headers_sent() ) { wp_die( esc_html__( 'Output has already started, so the download cannot begin. Check for stray output or warnings and try again.', 'sidcraft-rankboost' ) ); }
+		if ( ! self::allowed() ) { wp_die( esc_html__( 'Not allowed.', 'sidcraft-search-boost-suite' ), 403 ); }
+		if ( headers_sent() ) { wp_die( esc_html__( 'Output has already started, so the download cannot begin. Check for stray output or warnings and try again.', 'sidcraft-search-boost-suite' ) ); }
 		$tables = self::tables();
 		while ( ob_get_level() > 0 ) { ob_end_clean(); }
 		nocache_headers();
@@ -152,9 +152,9 @@ class Sidcraft_RankBoost_DbBackup {
 	public static function valid_name( $n ) { return is_string( $n ) && (bool) preg_match( '/^cleanup-\d{8}-\d{6}-[0-9a-f]{16}\.sql$/', $n ); }
 
 	public static function send_saved( $name ) {
-		if ( ! self::allowed() || ! self::valid_name( $name ) ) { wp_die( esc_html__( 'Not allowed.', 'sidcraft-rankboost' ), 403 ); }
+		if ( ! self::allowed() || ! self::valid_name( $name ) ) { wp_die( esc_html__( 'Not allowed.', 'sidcraft-search-boost-suite' ), 403 ); }
 		$f = self::dir() . '/' . $name;
-		if ( '' === self::dir() || ! is_file( $f ) ) { wp_die( esc_html__( 'That file no longer exists.', 'sidcraft-rankboost' ), 404 ); }
+		if ( '' === self::dir() || ! is_file( $f ) ) { wp_die( esc_html__( 'That file no longer exists.', 'sidcraft-search-boost-suite' ), 404 ); }
 		while ( ob_get_level() > 0 ) { ob_end_clean(); }
 		nocache_headers();
 		header( 'Content-Type: application/sql; charset=utf-8' );

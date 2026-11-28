@@ -15,7 +15,7 @@ class Sidcraft_RankBoost_Cache {
 
 	public static function dir() {
 		$up = wp_get_upload_dir();
-		return empty( $up['error'] ) ? trailingslashit( $up['basedir'] ) . 'sidcraft-rankboost/pages' : '';
+		return empty( $up['error'] ) ? trailingslashit( $up['basedir'] ) . 'sidcraft-search-boost-suite/pages' : '';
 	}
 
 	/* ---------------------------------------------------------- serving */
@@ -94,7 +94,7 @@ class Sidcraft_RankBoost_Cache {
 			$f = self::file_for_request();
 			if ( '' !== $f && wp_mkdir_p( dirname( $f ) ) ) {
 				self::guard_dir();
-				Sidcraft_RankBoost_Minify::write( $f, $html . "\n<!-- Page cached by Sidcraft RankBoost " . gmdate( 'Y-m-d H:i' ) . " UTC -->" );
+				Sidcraft_RankBoost_Minify::write( $f, $html . "\n<!-- Page cached by Sidcraft Search Boost Suite " . gmdate( 'Y-m-d H:i' ) . " UTC -->" );
 			}
 		}
 		return $html;
@@ -152,6 +152,6 @@ class Sidcraft_RankBoost_Cache {
 
 	public static function bar( $bar ) {
 		if ( ! current_user_can( 'manage_options' ) || is_admin() || ! Sidcraft_RankBoost_Speed::all()['cache'] ) { return; }
-		$bar->add_node( array( 'id' => 'sidcraft-rankboost-cache', 'title' => esc_html__( 'Clear page cache', 'sidcraft-rankboost' ), 'href' => wp_nonce_url( admin_url( 'admin-post.php?action=sidcraft_rankboost_speed&do=clear_cache&back=front' ), 'sidcraft_rankboost_speed' ) ) );
+		$bar->add_node( array( 'id' => 'sidcraft-search-boost-suite-cache', 'title' => esc_html__( 'Clear page cache', 'sidcraft-search-boost-suite' ), 'href' => wp_nonce_url( admin_url( 'admin-post.php?action=sidcraft_rankboost_speed&do=clear_cache&back=front' ), 'sidcraft_rankboost_speed' ) ) );
 	}
 }

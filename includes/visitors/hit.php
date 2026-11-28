@@ -33,7 +33,7 @@ if ( ! defined( 'SHORTINIT' ) || ! SHORTINIT ) {
 	exit; // This file only ever runs as the lightweight endpoint.
 }
 
-$sidcraft_vs_main = basename( dirname( __FILE__, 3 ) ) . '/sidcraft-rankboost.php';
+$sidcraft_vs_main = basename( dirname( __FILE__, 3 ) ) . '/sidcraft-search-boost-suite.php';
 $sidcraft_vs_on   = (array) get_option( 'active_plugins', array() );
 if ( ! in_array( $sidcraft_vs_main, $sidcraft_vs_on, true ) ) {
 	http_response_code( 404 ); // Plugin not active (network-wide activation uses the REST route).

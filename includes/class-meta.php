@@ -221,7 +221,7 @@ class Sidcraft_RankBoost_Meta {
 			$tw = ltrim( (string) Sidcraft_RankBoost_Settings::get( 'twitter_site' ), '@' );
 			if ( $tw ) { $out[] = '<meta name="twitter:site" content="@' . esc_attr( $tw ) . '" />'; }
 		}
-		echo "\n<!-- Sidcraft RankBoost -->\n" . implode( "\n", $out ) . "\n<!-- /Sidcraft RankBoost -->\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- every part escaped above.
+		echo "\n<!-- Sidcraft Search Boost Suite -->\n" . implode( "\n", $out ) . "\n<!-- /Sidcraft Search Boost Suite -->\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- every part escaped above.
 	}
 
 	/* ---------- save-time automation ---------- */

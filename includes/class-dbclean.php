@@ -15,17 +15,17 @@ class Sidcraft_RankBoost_DbClean {
 	/** What can be cleaned: key => label, help. */
 	public static function items() {
 		return array(
-			'revisions'   => array( __( 'Old post revisions', 'sidcraft-rankboost' ), __( 'Saved copies of every edit. The newest few per post are kept (set above).', 'sidcraft-rankboost' ) ),
-			'autodrafts'  => array( __( 'Auto-drafts', 'sidcraft-rankboost' ), __( 'Empty drafts WordPress creates when you open “Add new” and never save.', 'sidcraft-rankboost' ) ),
-			'trash'       => array( __( 'Posts and pages in the Trash', 'sidcraft-rankboost' ), __( 'Items you already deleted.', 'sidcraft-rankboost' ) ),
-			'spam'        => array( __( 'Spam comments', 'sidcraft-rankboost' ), __( 'Comments marked as spam.', 'sidcraft-rankboost' ) ),
-			'trashcomm'   => array( __( 'Trashed comments', 'sidcraft-rankboost' ), __( 'Comments you already deleted.', 'sidcraft-rankboost' ) ),
-			'transients'  => array( __( 'Expired transients', 'sidcraft-rankboost' ), __( 'Temporary data stored in the options table that has already expired.', 'sidcraft-rankboost' ) ),
-			'oembed'      => array( __( 'Embed (oEmbed) caches', 'sidcraft-rankboost' ), __( 'Saved copies of embedded videos and tweets. They are fetched again when needed.', 'sidcraft-rankboost' ) ),
-			'orph_post'   => array( __( 'Orphaned post meta', 'sidcraft-rankboost' ), __( 'Extra post data whose post no longer exists.', 'sidcraft-rankboost' ) ),
-			'orph_comm'   => array( __( 'Orphaned comment meta', 'sidcraft-rankboost' ), __( 'Extra comment data whose comment no longer exists.', 'sidcraft-rankboost' ) ),
-			'orph_rel'    => array( __( 'Orphaned category/tag links', 'sidcraft-rankboost' ), __( 'Category and tag links to posts that no longer exist.', 'sidcraft-rankboost' ) ),
-			'log404'      => array( __( 'Old broken-URL log entries', 'sidcraft-rankboost' ), __( 'RankBoost’s own 404 log entries not seen for 60 days.', 'sidcraft-rankboost' ) ),
+			'revisions'   => array( __( 'Old post revisions', 'sidcraft-search-boost-suite' ), __( 'Saved copies of every edit. The newest few per post are kept (set above).', 'sidcraft-search-boost-suite' ) ),
+			'autodrafts'  => array( __( 'Auto-drafts', 'sidcraft-search-boost-suite' ), __( 'Empty drafts WordPress creates when you open “Add new” and never save.', 'sidcraft-search-boost-suite' ) ),
+			'trash'       => array( __( 'Posts and pages in the Trash', 'sidcraft-search-boost-suite' ), __( 'Items you already deleted.', 'sidcraft-search-boost-suite' ) ),
+			'spam'        => array( __( 'Spam comments', 'sidcraft-search-boost-suite' ), __( 'Comments marked as spam.', 'sidcraft-search-boost-suite' ) ),
+			'trashcomm'   => array( __( 'Trashed comments', 'sidcraft-search-boost-suite' ), __( 'Comments you already deleted.', 'sidcraft-search-boost-suite' ) ),
+			'transients'  => array( __( 'Expired transients', 'sidcraft-search-boost-suite' ), __( 'Temporary data stored in the options table that has already expired.', 'sidcraft-search-boost-suite' ) ),
+			'oembed'      => array( __( 'Embed (oEmbed) caches', 'sidcraft-search-boost-suite' ), __( 'Saved copies of embedded videos and tweets. They are fetched again when needed.', 'sidcraft-search-boost-suite' ) ),
+			'orph_post'   => array( __( 'Orphaned post meta', 'sidcraft-search-boost-suite' ), __( 'Extra post data whose post no longer exists.', 'sidcraft-search-boost-suite' ) ),
+			'orph_comm'   => array( __( 'Orphaned comment meta', 'sidcraft-search-boost-suite' ), __( 'Extra comment data whose comment no longer exists.', 'sidcraft-search-boost-suite' ) ),
+			'orph_rel'    => array( __( 'Orphaned category/tag links', 'sidcraft-search-boost-suite' ), __( 'Category and tag links to posts that no longer exist.', 'sidcraft-search-boost-suite' ) ),
+			'log404'      => array( __( 'Old broken-URL log entries', 'sidcraft-search-boost-suite' ), __( 'Search Boost Suite’s own 404 log entries not seen for 60 days.', 'sidcraft-search-boost-suite' ) ),
 		);
 	}
 

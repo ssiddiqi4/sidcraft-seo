@@ -205,8 +205,8 @@ class Sidcraft_RankBoost_Minify {
 		$size = (int) filesize( $abs ); if ( $size < 200 || $size > 400000 ) { return $src; }
 		$up = wp_get_upload_dir(); if ( ! empty( $up['error'] ) ) { return $src; }
 		$name = substr( sha1( $abs ), 0, 12 ) . '-' . filemtime( $abs ) . '-' . $size . '.' . $ext;
-		$dir  = trailingslashit( $up['basedir'] ) . 'sidcraft-rankboost/min/';
-		$url  = trailingslashit( $up['baseurl'] ) . 'sidcraft-rankboost/min/' . $name;
+		$dir  = trailingslashit( $up['basedir'] ) . 'sidcraft-search-boost-suite/min/';
+		$url  = trailingslashit( $up['baseurl'] ) . 'sidcraft-search-boost-suite/min/' . $name;
 		// Use the same scheme as the file being replaced (or the page's own), so an https site never gets an http:// script that browsers block as mixed content.
 		$scheme = wp_parse_url( $src, PHP_URL_SCHEME );
 		$url    = set_url_scheme( $url, in_array( $scheme, array( 'http', 'https' ), true ) ? $scheme : null );
@@ -243,6 +243,6 @@ class Sidcraft_RankBoost_Minify {
 	public static function clear() {
 		$up = wp_get_upload_dir(); if ( ! empty( $up['error'] ) ) { return 0; }
 		delete_option( 'sidcraft_rankboost_min_bad' );
-		return Sidcraft_RankBoost_Speed::rm_dir( trailingslashit( $up['basedir'] ) . 'sidcraft-rankboost/min' );
+		return Sidcraft_RankBoost_Speed::rm_dir( trailingslashit( $up['basedir'] ) . 'sidcraft-search-boost-suite/min' );
 	}
 }
