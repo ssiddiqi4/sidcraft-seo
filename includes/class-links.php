@@ -86,20 +86,17 @@ class Sidcraft_RankBoost_Links {
 		}
 		// Not a post or page we know: ask the site itself (covers archives, shop pages, custom routes).
 		// Each of these ties up a second PHP worker, so they are cached, capped per run and skipped while the server is busy.
-		$lk = 'sidcraft_rankboost_lb_' . md5( $url );
+		$lk = 'sidcraft_rankboost_lb2_' . md5( $url );
 		$hit = get_transient( $lk );
 		if ( is_array( $hit ) ) { return $hit ? $hit : null; }
 		if ( self::$loopbacks >= 5 || Sidcraft_RankBoost_Audit::busy() ) { return null; }
 		++self::$loopbacks;
-		$res = wp_remote_head( $url, array( 'timeout' => 3, 'redirection' => 0, 'sslverify' => (bool) apply_filters( 'sidcraft_rankboost_loopback_sslverify', false ), 'headers' => array( 'X-Sidcraft-Linkcheck' => '1' ) ) ); // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout -- short, local request.
+		// Follow redirects: a link that redirects to a working page works for visitors, so it is not broken.
+		$res = wp_remote_head( $url, array( 'timeout' => 4, 'redirection' => 3, 'sslverify' => (bool) apply_filters( 'sidcraft_rankboost_loopback_sslverify', false ), 'headers' => array( 'X-Sidcraft-Linkcheck' => '1' ) ) );
 		if ( is_wp_error( $res ) ) { return null; }
 		$code = (int) wp_remote_retrieve_response_code( $res );
 		$out  = array();
 		if ( 404 === $code || 410 === $code ) { $out = array( 'missing', Sidcraft_RankBoost_Redirects::guess( $path ) ); }
-		elseif ( $code >= 300 && $code < 400 ) {
-			$to = (string) wp_remote_retrieve_header( $res, 'location' );
-			if ( '' !== $to && Sidcraft_RankBoost_Redirects::normalize( $to ) !== $path && self::is_internal( $to ) ) { $out = array( 'redirected', $to ); }
-		}
 		set_transient( $lk, $out, 6 * HOUR_IN_SECONDS );
 		return $out ? $out : null;
 	}
@@ -142,7 +139,7 @@ class Sidcraft_RankBoost_Links {
 	/** Visible items (ignored ones left out). */
 	public static function visible() {
 		$ign = self::ignored();
-		return array_filter( self::items(), function ( $it ) use ( $ign ) { return ! in_array( md5( $it['url'] ), $ign, true ); } );
+		return array_filter( self::items(), function ( $it ) use ( $ign ) { return 'redirected' !== $it['reason'] && ! in_array( md5( $it['url'] ), $ign, true ); } );
 	}
 
 	public static function count() { return count( self::visible() ); }
